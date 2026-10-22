@@ -1,3 +1,4 @@
+import { gradeTotals, gradeSystemLabels } from "./grades";
 export type Category = string;
 export type GoalCategory = Exclude<Category, "rest">;
 export type Goals = Record<GoalCategory, number>;
@@ -37,6 +38,7 @@ export interface Exercise {
   sets: string;
   reps: string;
   rest: string;
+  weightKg?: number;
   fingerLoad: boolean;
   intensity?: Intensity;
   loading?: LoadTag[];
@@ -51,6 +53,8 @@ export interface SessionTemplate {
   intensity?: Intensity;
   loading?: LoadTag[];
   typeName?: string;
+  catalogueId?: string;
+  targetRpe?: number;
 }
 export interface Workout {
   id: string;
@@ -71,6 +75,13 @@ export interface Workout {
   intensity?: Intensity;
   loading?: LoadTag[];
   typeName?: string;
+  gradeCounts?: GradeCount[];
+}
+export type GradeSystem = "font" | "v" | "custom";
+export interface GradeCount {
+  system: GradeSystem;
+  grade: string;
+  count: number;
 }
 export interface Project {
   name: string;
@@ -261,6 +272,7 @@ export function selectedTemplate(
   };
 }
 export function suggestedRpe(session: SessionTemplate): number {
+  if (session.targetRpe !== undefined) return session.targetRpe;
   return { rest: 1, easy: 3, moderate: 5, hard: 8 }[
     trainingTags(session).intensity
   ];
@@ -450,5 +462,5 @@ export function weekReport(state: State, start: string): string {
     )
     .join(
       "\n",
-    )}\n- Hard-intensity sessions: ${logs.filter((l) => trainingTags(l).intensity === "hard").length}\n- Total climbing sessions: ${logs.filter((l) => ["hard", "volume", "chill"].includes(l.category)).length}\n- Average RPE: ${avg}/10\n\n## Recovery observations\n${tired} check-ins with fatigue; ${pain} reports of finger discomfort.\n${logs.filter((l) => l.fingers === "tired").length} sessions ended with tired fingers.\n\n## Sessions\n${logs.map((l) => `- ${logDay(l)} · ${l.name} · RPE ${l.rpe}${l.notes ? ` — ${l.notes}` : ""}`).join("\n") || "No sessions logged."}\n\n## Project progress\n${logs.flatMap((l) => l.projects.map((p) => `- ${p.name || "Unnamed project"} ${p.grade} · ${p.outcome} · ${p.attempts} attempts`)).join("\n") || "No projects recorded."}\n\n## Notes for next week\n${w.notes || "Leave room for recovery. Carry over only what feels useful."}`;
+    )}\n- Hard-intensity sessions: ${logs.filter((l) => trainingTags(l).intensity === "hard").length}\n- Total climbing sessions: ${logs.filter((l) => ["hard", "volume", "chill"].includes(l.category)).length}\n- Average RPE: ${avg}/10\n\n## Recovery observations\n${tired} check-ins with fatigue; ${pain} reports of finger discomfort.\n${logs.filter((l) => l.fingers === "tired").length} sessions ended with tired fingers.\n\n## Sessions\n${logs.map((l) => `- ${logDay(l)} · ${l.name} · RPE ${l.rpe}${l.notes ? ` — ${l.notes}` : ""}`).join("\n") || "No sessions logged."}\n\n## Bouldering grade counts\n${gradeTotals(logs).map((g) => `- ${g.grade} (${gradeSystemLabels[g.system]}): ${g.count} completions`).join("\n") || "No grade counts recorded."}\n\n## Strength loads\n${logs.flatMap((l) => l.exercises.filter((e) => e.weightKg !== undefined).map((e) => `- ${logDay(l)} · ${e.name}: ${e.weightKg} kg · ${e.sets} × ${e.reps}`)).join("\n") || "No kilogram loads recorded."}\n\n## Project progress\n${logs.flatMap((l) => l.projects.map((p) => `- ${p.name || "Unnamed project"} ${p.grade} · ${p.outcome} · ${p.attempts} attempts`)).join("\n") || "No projects recorded."}\n\n## Notes for next week\n${w.notes || "Leave room for recovery. Carry over only what feels useful."}`;
 }

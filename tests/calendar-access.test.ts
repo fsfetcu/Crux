@@ -24,7 +24,7 @@ beforeAll(async () => {
     create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
     grant usage on schema auth,public to anon,authenticated;
     grant execute on function auth.uid() to anon,authenticated;`);
-  for (const file of ["202610220001_accounts.sql", "202610220002_google_friends.sql", "202610220003_calendar_subscriptions.sql"])
+  for (const file of ["202610220001_accounts.sql", "202610220002_google_friends.sql", "202610220003_calendar_subscriptions.sql", "202610220004_calendar_weights.sql"])
     await db.exec(readFileSync(new URL(`../supabase/migrations/${file}`, import.meta.url), "utf8"));
 }, 30000);
 afterAll(async () => { await db?.close(); });

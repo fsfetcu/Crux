@@ -32,6 +32,7 @@ import {
   Plus,
   Sparkles,
   X,
+  BookOpen,
 } from "lucide-react";
 import {
   fromDay,
@@ -290,6 +291,7 @@ function LibraryBubble({
             ? `${exercise.sets} × ${exercise.reps}`
             : categoryLabels[template.category]}
           {exercise && exercise.rest ? ` · ${exercise.rest} rest` : ""}
+          {exercise?.weightKg !== undefined ? ` · ${exercise.weightKg} kg` : ""}
         </small>
         {exercise && (
           <span className="exercise-effort">
@@ -310,6 +312,7 @@ export function SessionShelf({
   onAddType,
   onAddWorkout,
   onChoose,
+  onBrowseCatalogue,
 }: {
   templates: SessionTemplate[];
   types: WorkoutType[];
@@ -318,6 +321,7 @@ export function SessionShelf({
   onAddType: () => void;
   onAddWorkout: (category: Category) => void;
   onChoose: (id: string, exercises?: Exercise[]) => void;
+  onBrowseCatalogue?: () => void;
 }) {
   const categoryLabels = useTypeLabels();
   const { active } = useDndContext();
@@ -336,11 +340,11 @@ export function SessionShelf({
         <div>
           <h3>
             <Sparkles size={16} />
-            Choose your activities.
+            Workouts in this plan.
           </h3>
           <p>Pick a category, then drag an activity or exercise into a day.</p>
         </div>
-        <span className="touch-drag-hint">Hold to lift · or tap to plan</span>
+        <div className="shelf-catalogue-actions">{onBrowseCatalogue && <button className="text-button" onClick={onBrowseCatalogue}><BookOpen size={15}/>Browse catalogue</button>}<span className="touch-drag-hint">Hold to lift · or tap to plan</span></div>
       </div>
       <div className="shelf-categories-row">
       <div
@@ -514,6 +518,7 @@ function PlannedExercise({
           <strong>{exercise.name}</strong>
           <small>
             {exercise.sets} × {exercise.reps} · {exercise.rest} rest
+            {exercise.weightKg !== undefined ? ` · ${exercise.weightKg} kg` : ""}
           </small>
         </span>
       </button>
@@ -570,7 +575,7 @@ export function DraggablePlannedSession({
           {activity.name}
           <small>
             {single
-              ? `${single.sets} × ${single.reps} · ${single.rest} rest`
+              ? `${single.sets} × ${single.reps} · ${single.rest} rest${single.weightKg !== undefined ? ` · ${single.weightKg} kg` : ""}`
               : plan.exercises
                 ? `${plan.exercises.length} exercises · Planned`
                 : "Planned"}

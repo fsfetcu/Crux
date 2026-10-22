@@ -40,7 +40,7 @@ const goals = (g: unknown) =>
   ["hard", "volume", "chill", "strength"].every(
     (k) => Number.isInteger(g[k]) && finite(g[k], 0, 14),
   );
-const tagFields = (t: Record<string, any>) =>
+export const tagFields = (t: Record<string, any>) =>
   (t.intensity === undefined ||
     choices(t.intensity, ["rest", "easy", "moderate", "hard"])) &&
   (t.loading === undefined ||
@@ -49,12 +49,16 @@ const tagFields = (t: Record<string, any>) =>
       t.loading.every((v: unknown) =>
         choices(v, ["fingers", "upper", "lower", "cardio"]),
       ))) &&
-  (t.typeName === undefined || str(t.typeName));
-const exercise = (e: unknown) =>
+  (t.typeName === undefined || str(t.typeName)) &&
+  (t.catalogueId === undefined || str(t.catalogueId)) &&
+  (t.targetRpe === undefined || (Number.isInteger(t.targetRpe) && finite(t.targetRpe, 1, 10)));
+export const validExercise = (e: unknown) =>
   obj(e) &&
   ["id", "name", "sets", "reps", "rest"].every((k) => str(e[k])) &&
   typeof e.fingerLoad === "boolean" &&
+  (e.weightKg === undefined || finite(e.weightKg, 0, 2000)) &&
   tagFields(e);
+const exercise = validExercise;
 export function parseBackup(raw: string): State {
   if (raw.length > 10000000)
     throw Error("Backup is too large (10 MB maximum).");
@@ -180,7 +184,9 @@ export function parseBackup(raw: string): State {
             Number.isInteger(p.attempts) &&
             finite(p.attempts, 1, 10000) &&
             choices(p.outcome, ["attempted", "progress", "sent"]),
-        ),
+        ) &&
+        (l.gradeCounts === undefined || (Array.isArray(l.gradeCounts) && l.gradeCounts.length <= 200 && l.gradeCounts.every((g: unknown) =>
+          obj(g) && choices(g.system, ["font", "v", "custom"]) && typeof g.grade === "string" && g.grade.trim().length > 0 && g.grade.length <= 40 && Number.isInteger(g.count) && finite(g.count, 1, 10000)))),
     )
   )
     return fail();

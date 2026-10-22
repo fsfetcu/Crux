@@ -4,6 +4,7 @@ export interface CalendarExercise {
   sets: string;
   reps: string;
   rest: string;
+  weightKg?: number;
 }
 export interface CalendarEvent {
   id: string;
@@ -52,7 +53,7 @@ export function renderCalendar(document: CalendarDocument): string {
     const end = new Date(`${event.date}T00:00:00Z`);
     end.setUTCDate(end.getUTCDate() + 1);
     const details = ["Planned in Crux. Make changes in Crux; this calendar is read-only.",
-      ...event.exercises.map((e) => `${e.name}${e.sets ? ` · ${e.sets} sets` : ""}${e.reps ? ` · ${e.reps} reps / time` : ""}${e.rest ? ` · Rest ${e.rest}` : ""}`)].join("\n");
+      ...event.exercises.map((e) => `${e.name}${e.sets ? ` · ${e.sets} sets` : ""}${e.reps ? ` · ${e.reps} reps / time` : ""}${typeof e.weightKg === "number" ? ` · ${e.weightKg} kg` : ""}${e.rest ? ` · Rest ${e.rest}` : ""}`)].join("\n");
     lines.push("BEGIN:VEVENT",
       `UID:${encodeURIComponent(document.profileId)}/${encodeURIComponent(event.id)}@calendar.crux`,
       `DTSTAMP:${stamp}`, `LAST-MODIFIED:${stamp}`,

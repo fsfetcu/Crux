@@ -13,6 +13,10 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     base: process.env.APP_BASE_PATH || "/",
     test: {
+      // PGlite databases and jsdom are memory-heavy; bound concurrent workers
+      // so UI timers are exercised reliably on laptops as well as CI.
+      maxWorkers: 2,
+      testTimeout: 15000,
       // Tests inject disposable clients. Never load a developer's live account
       // configuration or send authentication requests to their project.
       env: {

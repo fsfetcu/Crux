@@ -14,7 +14,7 @@ export function profileCalendar(profile: TrainingProfile, start?: string, end?: 
       if (!template) return [];
       const selected = selectedTemplate(template, plan.exercises);
       return [{ id: plan.id, date: plan.date, name: selected.name, location: selected.location,
-        exercises: selected.exercises.map(({ name, sets, reps, rest }) => ({ name, sets, reps, rest })) }];
+        exercises: selected.exercises.map(({ name, sets, reps, rest, weightKg }) => ({ name, sets, reps, rest, ...(weightKg !== undefined ? {weightKg} : {}) })) }];
     }),
   };
 }

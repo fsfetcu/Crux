@@ -4,6 +4,10 @@ import { AccountControl, syncLabels } from "./accounts/AccountControl";
 import { SignInGate } from "./accounts/SignInGate";
 import { WorkoutTypesEditor } from "./WorkoutTypesEditor";
 import { CalendarConnect } from "./CalendarConnect";
+import { CataloguePage } from "./CataloguePage";
+import { catalogueFromTemplate, templateInPlan } from "./catalogue";
+import { GradeCountFields, GradeStatistics, WeightInput } from "./TrainingFields";
+import { normalizeGradeCounts, gradeTotals, gradeSystemLabels } from "./grades";
 import { Modal } from "./Modal";
 import { useEffect, useRef, useState } from "react";
 import { useAppStatus } from "./useAppStatus";
@@ -41,6 +45,7 @@ import {
   CheckCircle2,
   Upload,
   Download,
+  BookOpen,
 } from "lucide-react";
 import {
   addDays,
@@ -76,6 +81,7 @@ import type {
   Workout,
   Intensity,
   LoadTag,
+  GradeCount,
 } from "./model";
 import { planWarnings, recommend, significantLoad } from "./engine";
 import type { Suggestion } from "./engine";
@@ -334,6 +340,8 @@ function LogForm({
   );
   const [hangs, setHangs] = useState(edit?.fingerLoad ?? !options.omitHangs);
   const [projects, setProjects] = useState<Project[]>(edit?.projects ?? []);
+  const [gradeCounts, setGradeCounts] = useState<GradeCount[]>(edit?.gradeCounts ?? []);
+  const [weights, setWeights] = useState<Record<string, number | undefined>>({});
   const [error, setError] = useState("");
   const originalExercises =
     edit && templateId === edit.templateId
@@ -341,7 +349,7 @@ function LogForm({
       : template.exercises;
   // A deliberate edit can add previously omitted hangs. Existing performed
   // exercises retain their historical settings rather than the current library.
-  const sessionExercises =
+  const baseSessionExercises =
     edit &&
     templateId === edit.templateId &&
     !edit.fingerLoad &&
@@ -355,6 +363,7 @@ function LogForm({
           ),
         ]
       : originalExercises;
+  const sessionExercises = baseSessionExercises.map((exercise) => Object.hasOwn(weights, exercise.id) ? {...exercise,weightKg:weights[exercise.id]} : exercise);
   const performedExercises = sessionExercises.filter(
     (e) => !e.fingerLoad || hangs,
   );
@@ -390,6 +399,9 @@ function LogForm({
       (hangs && sessionExercises.some((e) => e.fingerLoad)));
   const submit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    let counts: GradeCount[];
+    try { counts = normalizeGradeCounts(gradeCounts); }
+    catch (error) { setError(error instanceof Error ? error.message : "Check the grade counts."); return; }
     if (exerciseOnly && !performedExercises.length) {
       setError("Keep at least one exercise, or cancel this log.");
       return;
@@ -430,6 +442,7 @@ function LogForm({
             ? (edit.typeName ?? categoryLabels[edit.category])
             : categoryLabels[template.category],
         projects,
+        ...(counts.length || edit?.gradeCounts ? {gradeCounts:counts} : {}),
         exercises: performedExercises.map((e) =>
           exerciseOnly ? snapshotExercise(e, baseTemplate) : e,
         ),
@@ -462,6 +475,7 @@ function LogForm({
               onChange={(e) => {
                 setTemplate(e.target.value);
                 setHangs(!options.omitHangs);
+                setWeights({});
                 const t = state.templates.find((t) => t.id === e.target.value);
                 setRpe(t ? suggestedRpe(t) : 1);
               }}
@@ -564,7 +578,7 @@ function LogForm({
                 .filter((e) => !e.fingerLoad || hangs)
                 .map((e) => (
                   <div key={e.id}>
-                    <span>{e.name}</span>
+                    <span>{e.name}<WeightInput name={e.name} value={e.weightKg} onChange={(weightKg) => setWeights({...weights,[e.id]:weightKg})}/></span>
                     <span>
                       {e.sets} × {e.reps} · {e.rest} rest
                     </span>
@@ -573,6 +587,7 @@ function LogForm({
             </div>
           </div>
         )}
+        <GradeCountFields rows={gradeCounts} onChange={setGradeCounts}/>
         <label>
           Notes <span className="subtle">optional</span>
           <textarea
@@ -733,8 +748,8 @@ function PlanForm({
     selection ?? routine.exercises.map((ex) => snapshotExercise(ex, routine));
   const updateExercise = (
     id: string,
-    field: "sets" | "reps" | "rest",
-    value: string,
+    field: "sets" | "reps" | "rest" | "weightKg",
+    value: string | number | undefined,
   ) => {
     setSelection((current) =>
       (
@@ -820,6 +835,7 @@ function PlanForm({
                             sets: original.sets,
                             reps: original.reps,
                             rest: original.rest,
+                            weightKg: original.weightKg,
                           }
                         : ex;
                     }),
@@ -856,6 +872,7 @@ function PlanForm({
                         {ex.name}
                         <small>
                           {values.sets} × {values.reps} · {values.rest} rest
+                          {values.weightKg !== undefined ? ` · ${values.weightKg} kg` : ""}
                         </small>
                       </span>
                     </label>
@@ -882,6 +899,7 @@ function PlanForm({
                             />
                           </label>
                         ))}
+                        <WeightInput name={ex.name} label="Kg for this day" value={dayExercise.weightKg} onChange={(value) => updateExercise(ex.id,"weightKg",value)}/>
                       </div>
                     )}
                   </div>
@@ -1148,14 +1166,17 @@ function LibraryCard({
   template,
   onSave,
   isNew = false,
+  catalogueMode = false,
 }: {
   isNew?: boolean;
   template: SessionTemplate;
   onSave: (t: SessionTemplate) => void;
+  catalogueMode?: boolean;
 }) {
   const { active } = useProfiles();
   const categoryLabels = useTypeLabels();
   const [t, setT] = useState(template);
+  const isRecovery = t.category === "rest" && !catalogueMode;
   useEffect(() => setT(template), [template]);
   const setEx = (
     id: string,
@@ -1188,7 +1209,7 @@ function LibraryCard({
         onSubmit={(e) => {
           e.preventDefault();
           onSave(
-            t.category === "rest"
+            isRecovery
               ? { ...t, intensity: "rest", loading: [], exercises: [] }
               : t,
           );
@@ -1201,7 +1222,7 @@ function LibraryCard({
               required
               maxLength={120}
               value={t.name}
-              onChange={(e) => setT({ ...t, name: e.target.value })}
+              onChange={(e) => setT({ ...t, name: e.target.value, exercises: catalogueMode && t.exercises.length === 1 && (!t.exercises[0].name || t.exercises[0].name === t.name) ? [{...t.exercises[0],name:e.target.value}] : t.exercises })}
             />
           </label>
           <label>
@@ -1213,7 +1234,7 @@ function LibraryCard({
           </label>
         </div>
         <div className="form-grid">
-          <label>
+          {!catalogueMode && <label>
             Workout type
             <select
               value={t.category}
@@ -1229,12 +1250,12 @@ function LibraryCard({
                 <option value="rest">Rest & mobility</option>
               )}
             </select>
-          </label>
+          </label>}
           <label>
             Intensity
             <select
               value={trainingTags(t).intensity}
-              disabled={t.category === "rest"}
+              disabled={isRecovery}
               onChange={(e) =>
                 setT({
                   ...t,
@@ -1251,8 +1272,9 @@ function LibraryCard({
               ))}
             </select>
           </label>
+          <label>Target RPE <span className="subtle">optional</span><input aria-label="Target RPE" type="number" min="1" max="10" step="1" value={t.targetRpe ?? ""} onChange={(e) => setT({...t,targetRpe:e.target.value === "" ? undefined : e.target.valueAsNumber})}/></label>
         </div>
-        <fieldset className="loading-tags" disabled={t.category === "rest"}>
+        <fieldset className="loading-tags" disabled={isRecovery}>
           <legend>Loading tags</legend>
           <p className="small muted">
             Choose the areas this workout loads. Hard sessions sharing these
@@ -1349,6 +1371,7 @@ function LibraryCard({
                 <X size={16} />
               </button>
             </div>
+            <WeightInput name={ex.name} value={ex.weightKg} onChange={(value) => setEx(ex.id,"weightKg",value)}/>
             <label className="checkbox-label small">
               <input
                 type="checkbox"
@@ -1413,7 +1436,7 @@ function LibraryCard({
             </details>
           </div>
         ))}
-        {t.category !== "rest" && (
+        {!isRecovery && (
           <button
             type="button"
             className="text-button"
@@ -1438,7 +1461,7 @@ function LibraryCard({
           </button>
         )}
         <button className="button align-start" type="submit">
-          Save session
+          {catalogueMode ? "Save to catalogue" : "Save session"}
         </button>
       </form>
     </details>
@@ -1543,6 +1566,7 @@ function TrainingApp() {
     onCategoryChange: setShelfCategory,
     onAddType: () => setShowNewType(true),
     onAddWorkout: addWorkout,
+    onBrowseCatalogue: () => navigate("catalogue"),
   };
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 30000);
@@ -1764,9 +1788,10 @@ function TrainingApp() {
           <nav aria-label="Main navigation">
             {[
               ["dashboard", "Dashboard", Mountain],
-              ["planner", "Weekly planner", CalendarDays],
+              ["planner", "Training plan", CalendarDays],
+              ["catalogue", "Catalogue", BookOpen],
               ["history", "Training history", History],
-              ["settings", "Settings & library", SlidersHorizontal],
+              ["settings", "Settings", SlidersHorizontal],
             ].map(([id, label, I]) => {
               const NavIcon = I as typeof Mountain;
               return (
@@ -1838,10 +1863,12 @@ function TrainingApp() {
                 {page === "dashboard"
                   ? "Dashboard"
                   : page === "planner"
-                    ? "Weekly planner"
+                    ? "Training plan"
+                    : page === "catalogue"
+                      ? "Catalogue"
                     : page === "history"
                       ? "Training history"
-                      : "Settings & library"}
+                      : "Settings"}
               </strong>
             </span>
             <div className="topbar-right">
@@ -2136,6 +2163,7 @@ function TrainingApp() {
                 </div>
               </>
             )}
+            {page === "catalogue" && <CataloguePage onViewPlan={() => navigate("planner")} renderEditor={(template,save) => <LibraryCard template={template} onSave={save} isNew catalogueMode/>}/>}
             {page === "planner" && (
               <>
                 <div className="page-heading">
@@ -2251,6 +2279,7 @@ function TrainingApp() {
                     <Plus size={17} /> Log session
                   </button>
                 </div>
+                <GradeStatistics logs={state.logs}/>
                 <section className="panel review-panel">
                   <div className="section-header">
                     <div>
@@ -2344,6 +2373,7 @@ function TrainingApp() {
                     </div>
                     <div>
                       <h3>Projects & progress</h3>
+                      {gradeTotals(reviewLogs).length > 0 && <p className="muted">Boulders completed: {gradeTotals(reviewLogs).map((g) => `${g.grade} (${gradeSystemLabels[g.system]}): ${g.count}`).join(" · ")}</p>}
                       {reviewLogs.some((l) => l.projects.length) ? (
                         reviewLogs.flatMap((l) =>
                           l.projects.map((p, i) => (
@@ -2645,9 +2675,9 @@ function TrainingApp() {
                 />
                 <div className="section-title">
                   <div>
-                    <h2>Session library</h2>
+                    <h2>Workouts in this training plan</h2>
                     <p>
-                      Workouts in the same type share a weekly goal. Intensity
+                      Choose reusable workouts in Catalogue, or customize this plan’s copies here. Workouts in the same type share a weekly goal. Intensity
                       and loading tags guide your daily recommendation.
                     </p>
                   </div>
@@ -2661,7 +2691,7 @@ function TrainingApp() {
                 </div>
                 <div className="library-list">
                   {state.templates.map((t) => (
-                    <LibraryCard
+                    <div key={t.id} className="plan-library-item"><LibraryCard
                       template={t}
                       key={t.id}
                       onSave={(t) => {
@@ -2686,7 +2716,9 @@ function TrainingApp() {
                             "Session updated. Previously logged exercises and loading are preserved.",
                           );
                       }}
-                    />
+                    />{t.category !== "rest" && !(profiles.data.catalogue ?? []).some((item) => templateInPlan(item,profiles.active)?.id === t.id) && <button className="text-button save-to-catalogue" onClick={() => {
+                      if (profiles.persist({...profiles.data,catalogue:[...(profiles.data.catalogue ?? []),catalogueFromTemplate(t,profiles.active)]})) notify(`${t.name} saved to your catalogue.`);
+                    }}><BookOpen size={15}/>Save {t.name} to catalogue</button>}</div>
                   ))}
                 </div>
                 <section className="panel settings-panel">

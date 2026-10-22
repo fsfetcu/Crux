@@ -34,7 +34,7 @@ describe("Apple Calendar files", () => {
   });
   it("exports multiple sessions, selected exercises and daily overrides without history or recovery", () => {
     const profile = firstProfile(initialState()).profiles[0];
-    const exercise = { ...profile.state.templates.find((t) => t.id === "strength")!.exercises[0], sets: "7", reps: "4", rest: "120 sec" };
+    const exercise = { ...profile.state.templates.find((t) => t.id === "strength")!.exercises[0], sets: "7", reps: "4", rest: "120 sec", weightKg: 27.5 };
     profile.state.plans = [
       { id: "a", date: "2026-10-22", templateId: "kilter" },
       { id: "b", date: "2026-10-22", templateId: "strength", exercises: [exercise] },
@@ -45,6 +45,7 @@ describe("Apple Calendar files", () => {
     expect(document.events).toHaveLength(2);
     expect(document.events[1]).toMatchObject({ name: exercise.name, exercises: [{ sets: "7", rest: "120 sec" }] });
     const ics = unfold(renderCalendar(document)); expect(ics).toContain("7 sets");
+    expect(ics).toContain("27.5 kg");
     expect(ics).not.toMatch(/RPE|fingers|checkins|projects|Beastmaker/);
     expect(profile.state.templates.find((t) => t.id === "strength")!.exercises[0].sets).not.toBe("7");
   });

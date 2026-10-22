@@ -10,7 +10,7 @@ set local role authenticated;
 set local request.jwt.claim.sub = '7091bb15-8572-484e-b99c-c2a15cb09301';
 select count(*) as test_document_saved from public.save_planner(
   '7091bb15-8572-484e-b99c-c2a15cb09301',0,
-  '{"version":2,"profiles":[{"id":"calendar-test","name":"Transaction only","state":{"plans":[{"id":"p1","date":"2026-10-22","templateId":"strength","exercises":[{"name":"Bench press","sets":"4","reps":"8","rest":"120 sec"}]}],"templates":[{"id":"strength","name":"Strength","location":"Gym","exercises":[]}],"checkins":{"private":"NEVER EXPOSE"},"logs":[{"notes":"NEVER EXPOSE"}]}},{"id":"other","name":"OTHER PRIVATE PROFILE"}]}'::jsonb
+  '{"version":2,"profiles":[{"id":"calendar-test","name":"Transaction only","state":{"plans":[{"id":"p1","date":"2026-10-22","templateId":"strength","exercises":[{"name":"Bench press","sets":"4","reps":"8","rest":"120 sec","weightKg":57.5}]}],"templates":[{"id":"strength","name":"Strength","location":"Gym","exercises":[]}],"checkins":{"private":"NEVER EXPOSE"},"logs":[{"notes":"NEVER EXPOSE"}]}},{"id":"other","name":"OTHER PRIVATE PROFILE"}]}'::jsonb
 );
 select public.enable_calendar_subscription('calendar-test',repeat('e',64));
 set local role anon;
@@ -22,6 +22,7 @@ begin
   if feed->>'profileId' is distinct from 'calendar-test'
     or feed->'events'->0->>'name' is distinct from 'Bench press'
     or feed->'events'->0->'exercises'->0->>'rest' is distinct from '120 sec'
+    or feed->'events'->0->'exercises'->0->>'weightKg' is distinct from '57.5'
     or jsonb_array_length(feed->'events') <> 1
     or feed::text like '%PRIVATE%' or feed::text like '%NEVER EXPOSE%'
   then raise exception 'Private calendar projection failed'; end if;

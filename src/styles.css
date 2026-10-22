@@ -3358,3 +3358,94 @@ select {
     max-width: 220px;
   }
 }
+
+/* Reusable catalogue, completed grade counts and optional strength loads. */
+.sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+.shelf-catalogue-actions { display:flex; flex-direction:column; align-items:flex-end; gap:7px; }
+.catalogue-create-actions { display:flex; flex-wrap:wrap; gap:8px; }
+.catalogue-plan-banner { display:flex; align-items:center; gap:16px; padding:21px 24px; border:1px solid var(--line); background:#f4f6ef; border-radius:15px; margin-bottom:22px; }
+.catalogue-plan-banner > svg { color:#6e805b; flex-shrink:0; }
+.catalogue-plan-banner strong { font-size:14px; }
+.catalogue-plan-banner p { margin:6px 0 0; color:#7d8872; font-size:12px; line-height:1.7; }
+.catalogue-plan-banner > .text-button { margin-left:auto; flex-shrink:0; }
+.catalogue-filters { display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) minmax(0,1fr); gap:12px; align-items:center; }
+.catalogue-search { position:relative; }
+.catalogue-search svg { position:absolute; left:12px; top:13px; color:#91a07f; }
+.catalogue-search input { padding-left:38px; }
+.catalogue-count { margin:18px 0; }
+.catalogue-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; margin-bottom:28px; }
+.catalogue-card { display:flex; flex-direction:column; gap:16px; padding:24px; border:1px solid var(--line); border-radius:20px; background:white; min-width:0; }
+.catalogue-card-meta { display:flex; justify-content:space-between; gap:10px; align-items:center; font-size:10px; color:#879578; }
+.catalogue-card-meta > span:last-child { display:flex; align-items:center; gap:5px; }
+.catalogue-focus { color:#657953; background:#f1f4eb; border-radius:20px; padding:7px 10px; font-size:10px; }
+.catalogue-card h2 { margin:0; font-size:20px; font-weight:500; line-height:1.3; overflow-wrap:anywhere; }
+.catalogue-description { color:#7f8a75; line-height:1.85; font-size:12px; margin:0; }
+.catalogue-tags { display:flex; flex-wrap:wrap; gap:6px; }
+.catalogue-tags span { font-size:10px; padding:5px 8px; border:1px solid #e7ecde; border-radius:15px; color:#7a896c; }
+.catalogue-card-actions { display:flex; align-items:center; gap:5px; margin-top:auto; padding-top:10px; }
+.catalogue-card-actions > .button, .catalogue-card-actions > .catalogue-added { margin-right:auto; }
+.catalogue-card-actions .icon-button { flex-shrink:0; }
+.catalogue-added { color:#728857; }
+.catalogue-exercise-preview { font-size:11px; line-height:1.7; color:#7b896e; }
+.catalogue-exercise-preview summary { cursor:pointer; }
+.catalogue-exercise-preview ul { padding-left:18px; }
+.catalogue-exercise-preview li { margin:9px 0; }
+.catalogue-exercise-preview li > * { display:block; font-weight:400; }
+.catalogue-exercise-picker { display:flex; flex-direction:column; gap:12px; padding:16px; border:1px solid var(--line); border-radius:12px; }
+.catalogue-editor-metadata { padding:0 0 20px; }
+.catalogue-editor-metadata + .library-card { border:0; }
+.save-to-catalogue { margin:9px 18px 4px; }
+.exercise-block > .weight-field { width:180px; max-width:100%; }
+.routine-preview > div { gap:12px; }
+.routine-preview .weight-field { margin-top:8px; max-width:160px; }
+.routine-preview .weight-field input { padding:7px 9px; }
+.day-exercise-fields { grid-template-columns:repeat(4,minmax(0,1fr)); }
+.grade-log { padding:18px; border:1px solid var(--line); border-radius:14px; }
+.grade-log h3 { font-size:14px; margin:0 0 8px; }
+.grade-log h3 .subtle { font-size:11px; font-weight:400; }
+.grade-log p { margin:0; }
+.grade-count-row { display:grid; grid-template-columns:1.2fr 1fr 1fr 30px; gap:10px; align-items:end; }
+.grade-count-row > .icon-button { min-height:42px; }
+.grade-statistics { margin-bottom:24px; }
+.grade-statistics .section-header > label { max-width:160px; }
+.grade-tables { display:grid; gap:24px; padding:0 24px; }
+.grade-tables table { width:100%; border-collapse:collapse; font-size:12px; text-align:left; table-layout:fixed; }
+.grade-tables caption { text-align:left; font-size:13px; font-weight:500; color:#667950; padding-bottom:12px; }
+.grade-tables th, .grade-tables td { padding:11px 0; border-bottom:1px solid #edf0e7; }
+.grade-tables th { font-weight:400; }
+.grade-tables th:first-child { width:25%; overflow-wrap:anywhere; }
+.grade-tables thead { color:#8a997b; font-size:10px; }
+.grade-stat-value { display:flex; align-items:center; gap:15px; }
+.grade-stat-value strong { width:38px; text-align:right; font-weight:500; }
+.grade-stat-track { flex:1; height:10px; background:#f0f3e9; border-radius:12px; }
+.grade-stat-track > span { display:block; height:100%; border-radius:12px; background:#a5b68c; }
+@media (max-width:850px) {
+  .catalogue-plan-banner { flex-wrap:wrap; }
+  .catalogue-plan-banner > .text-button { margin-left:38px; }
+}
+@media (max-width:650px) {
+  .catalogue-grid { grid-template-columns:minmax(0,1fr); gap:14px; }
+  .catalogue-filters { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+  .catalogue-search { grid-column:1/-1; }
+  .catalogue-plan-banner { padding:18px; gap:12px; }
+  .catalogue-plan-banner > div { flex:1; min-width:0; }
+  .catalogue-plan-banner > .text-button { margin-left:34px; }
+  .catalogue-card { padding:21px; gap:15px; }
+  .catalogue-card h2 { font-size:20px; }
+  .catalogue-card-actions .button { font-size:11px; padding:10px 12px; }
+  .catalogue-filters select { font-size:13px; }
+  .shelf-catalogue-actions { align-items:flex-start; gap:6px; }
+  .day-exercise-fields { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .grade-log { padding:14px; }
+  .grade-count-row { grid-template-columns:1fr 1fr 1fr 28px; gap:7px; }
+  .grade-count-row input, .grade-count-row select { font-size:14px; padding:8px; }
+  .grade-tables { padding:0 17px; }
+}
+@media (max-width:370px) {
+  .grade-count-row { grid-template-columns:1fr 1fr 30px; }
+  .grade-count-row > label:first-child { grid-column:1/-1; }
+}
+
+@media (max-width:650px) {
+  .weight-field input, .grade-count-row input, .grade-count-row select, .catalogue-filters select { font-size:16px; }
+}

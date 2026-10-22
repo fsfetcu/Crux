@@ -307,7 +307,7 @@ export function recommend(
         candidates.length
           ? "No remaining workout fits your check-in and recovery window. Rest is useful; avoid cramming sessions."
           : state.templates.every((t) => t.category === "rest")
-            ? "Add workout types and sessions in Settings & library to build this profile's training pool. Your daily check-in will use their intensity and loading tags automatically."
+            ? "Add workouts from Catalogue to build this training plan's pool. Your daily check-in will use their intensity and loading tags automatically."
             : restTemplate &&
                 restTemplate.category !== "rest" &&
                 remain(restTemplate)

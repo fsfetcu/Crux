@@ -176,7 +176,7 @@ describe("working application flows", () => {
   it("plans two sessions, shows loading warnings, and moves a plan", async () => {
     const user = userEvent.setup();
     render(<App />);
-    await user.click(screen.getByRole("button", { name: "Weekly planner" }));
+    await user.click(screen.getByRole("button", { name: "Training plan" }));
     await user.click(screen.getByRole("button", { name: "Plan session" }));
     let d = screen.getByRole("dialog");
     await user.selectOptions(within(d).getByLabelText("Session"), "kilter");
@@ -249,7 +249,7 @@ describe("working application flows", () => {
     localStorage.setItem("crux-planner-v1", JSON.stringify(s));
     render(<App />);
     await user.click(
-      screen.getByRole("button", { name: "Settings & library" }),
+      screen.getByRole("button", { name: "Settings" }),
     );
     const summary = screen
       .getByText("Strength", { selector: "strong" })
@@ -302,7 +302,7 @@ describe("working application flows", () => {
     localStorage.setItem("crux-planner-v1", JSON.stringify(s));
     render(<App />);
     await user.click(
-      screen.getByRole("button", { name: "Settings & library" }),
+      screen.getByRole("button", { name: "Settings" }),
     );
     const hard = screen.getByLabelText("Hard", { selector: "input" });
     await user.clear(hard);
@@ -374,7 +374,7 @@ describe("adding workout types and activities from the calendar shelf", () => {
   });
   it("adds a climbing activity to an existing type from the weekly planner", async () => {
     const user = userEvent.setup(); render(<App />);
-    await user.click(screen.getByRole('button', { name: 'Weekly planner' }));
+    await user.click(screen.getByRole('button', { name: 'Training plan' }));
     await user.click(screen.getByRole('button', { name: 'Add workout to Hard' }));
     const dialog = screen.getByRole('dialog');
     expect((within(dialog).getByLabelText('Workout type') as HTMLSelectElement).value).toBe('hard');
@@ -419,7 +419,7 @@ describe("profile and custom workout UI", () => {
     expect(stored().types).toEqual([]);
     expect(stored().logs).toHaveLength(0);
     await user.click(
-      screen.getByRole("button", { name: "Settings & library" }),
+      screen.getByRole("button", { name: "Settings" }),
     );
     await user.click(screen.getByRole("button", { name: "Add workout type" }));
     await user.type(screen.getByLabelText("New workout type"), "Running");
@@ -721,7 +721,7 @@ describe("actual exercises in calendar categories", () => {
   it("composes two exercises as one session, then logs only those exercises", async () => {
     const user = userEvent.setup();
     const view = render(<App />);
-    await user.click(screen.getByRole("button", { name: "Weekly planner" }));
+    await user.click(screen.getByRole("button", { name: "Training plan" }));
     await user.click(screen.getByRole("tab", { name: "Strength" }));
     await user.click(
       screen.getByRole("button", {

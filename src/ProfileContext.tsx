@@ -267,7 +267,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
                     setCreating(false);
                     store.setShowProfiles(false);
                     store.setNotice(
-                      "Profile created. Add workout types and sessions in Settings & library.",
+                      "Training plan created. Choose workouts from Catalogue.",
                     );
                   }
                 } catch (e) {
