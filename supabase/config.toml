@@ -1,0 +1,4 @@
+# Only this endpoint uses its own narrowly scoped capability token. Account
+# authentication and database policies remain unchanged.
+[functions.calendar-feed]
+verify_jwt = false

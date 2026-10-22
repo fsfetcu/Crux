@@ -27,6 +27,9 @@
       <li>The approved-email list is kept privately in Supabase. It is not published in the app's source code.</li>
     </ul>
     <p>Database rules keep one person's training separate from other app users. The project owner administers the backend and can access stored account data. Local browser storage is not encrypted storage.</p>
+    <h2>Optional calendar connection</h2>
+    <p>If you create a private calendar link, anyone who has that link can read the selected profile's planned workout dates, names, locations and exercise sets, reps and rest. It excludes recovery check-ins, training history, notes, projects and account details. Calendar apps you subscribe with, including Apple Calendar and iCloud if selected, receive this planned-workout information. No Apple account credentials or Google Calendar permissions are requested.</p>
+    <p>Subscription links use random access tokens; only their hashes are stored in the database. The app shows a link when you create it and excludes it from training backups. Disable or replace the link in Crux to stop future reads through that URL. Unsubscribe in your calendar app to remove its saved copy; revocation cannot erase copies already downloaded. Calendar files you export also contain the selected planned workouts and do not update automatically.</p>
     <h2>Services used</h2>
     <p>GitHub Pages hosts the website, Google provides Google sign-in, and Supabase provides online authentication and storage. These services may process connection and security metadata, such as IP addresses and login timestamps, under their own policies. Crux does not add advertising trackers or third-party analytics.</p>
     <h2>Your choices and deletion</h2>

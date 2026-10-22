@@ -59,6 +59,16 @@ Before switching addresses, use **Settings & library → Export JSON** in the ex
 7. In **Training history**, choose a week for its review, record next-week notes, and copy or download Markdown for Apple Notes. Weeks are archived automatically on the next visit or while the app is open at rollover; no background task is needed.
 8. In **Settings & library**, edit goals, the season, week start, recovery minimum, session names and routines. The Beastmaker rest interval defaults to **180 seconds**, is fully editable, and is not presented as a personalized prescription. Other strength sets/reps are editable starting values. The requested Beastmaker 5 × 10 seconds and push-ups 3 × 12 are included.
 
+## Apple Calendar
+
+Use **Apple Calendar** above the calendar in Dashboard or Weekly planner. Choose **Create private calendar link**, then **Add to Apple Calendar** on your iPhone. If needed, copy the link and open iOS Calendar → Calendars → Add Calendar → Add Subscription Calendar → paste → Find. Each profile has its own optional, revocable link. Nothing is connected until you choose to create a link. No extra Google permissions, Apple password or developer account is required.
+
+This is a **one-way, read-only subscription**: plan and edit in Crux. Changes appear after saving online and Apple Calendar refreshing; refresh timing is controlled by Apple and may be delayed. Events are all-day because Crux plans dates, not start times. Multiple sessions and daily exercise overrides are included. Only planned workouts are included: completing/removing a plan removes it from the feed, while the log stays in Crux.
+
+Anyone holding a subscription URL can read that profile's planned workout names, dates, locations and exercise prescriptions. Check-ins, notes, projects, history and account details are excluded. Keep the link private. **Disable calendar link** stops future reads; unsubscribe in Apple Calendar to remove its cached copy. Links are shown only when created and aren't included in JSON backups. Replacing a link invalidates its predecessor; resubscribe on your devices.
+
+**Download .ics** exports the displayed week or all planned sessions in the active profile, including offline/device-only use. It is a snapshot, without automatic updates. Import it through your calendar application's file import; repeated imports may duplicate events. iPhone file handling varies, so the subscription is the recommended ongoing route. Server setup and validation are in [Apple Calendar setup](docs/CALENDAR.md).
+
 ## Training profiles and custom workouts
 
 Tap the profile name in the top bar (or **Manage profiles** in navigation), then **New profile**. Your original October 2026–January 2027 climbing plan is the first profile, with all existing records preserved. Each profile has separate workout types, weekly goals, session library, dates, calendar, check-ins, history and archived reviews. Rename profiles in the manager. Switch with the navigation selector or by selecting a profile in the manager.

@@ -16,12 +16,12 @@ beforeAll(async () => {
     create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
     grant usage on schema auth,public to anon,authenticated;
     grant execute on function auth.uid() to anon,authenticated;`);
-  for (const file of ["202610220001_accounts.sql", "202610220002_google_friends.sql"])
+  for (const file of ["202610220001_accounts.sql", "202610220002_google_friends.sql", "202610220003_calendar_subscriptions.sql"])
     await db.exec(readFileSync(new URL(`../supabase/migrations/${file}`,import.meta.url),"utf8"));
 },30000);
 afterAll(async () => { await db?.close(); });
 beforeEach(async () => {
-  await db.exec(`reset role; truncate public.user_planners,auth.users,auth.identities,crux_private.approved_users;
+  await db.exec(`reset role; truncate crux_private.calendar_subscriptions,public.user_planners,auth.users,auth.identities,crux_private.approved_users;
     insert into auth.users(id,email,email_confirmed_at,raw_user_meta_data) values
       ('${A}','a@example.test',now(),'{}'),('${B}','b@example.test',now(),'{}'),
       ('${C}','c@example.test',now(),'{"approved":true,"email":"a@example.test","provider":"google"}'),
@@ -37,6 +37,11 @@ const asUser = (id: string) => db.exec(`reset role; set request.jwt.claim.sub='$
 const save = (id=A,revision=0) => db.query("select * from public.save_planner($1::uuid,$2::bigint,$3::jsonb)",[id,revision,document]);
 const load = (id=A) => db.query("select * from public.load_planner($1::uuid)",[id]);
 describe("private Google account access",() => {
+  it("runs the calendar deployment verification and rolls back its fictional records", async () => {
+    const results = await db.exec(readFileSync(new URL('../supabase/verify-calendar.sql', import.meta.url), 'utf8'));
+    expect(results.at(-1)?.rows[0]).toMatchObject({verification: expect.stringContaining('PASS: calendar projection')});
+    expect((await db.query("select * from auth.users where email='crux-calendar-test@example.invalid'")).rows).toEqual([]);
+  });
   it("runs the complete deployment verification without retaining test records",async () => {
     const results = await db.exec(readFileSync(new URL('../supabase/verify-google-accounts.sql',import.meta.url),'utf8'));
     expect(results.at(-1)?.rows[0]).toMatchObject({verification:expect.stringContaining('PASS: approved Google access')});

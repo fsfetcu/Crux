@@ -3,6 +3,7 @@ import { AccountProvider, useAccount } from "./accounts/AccountContext";
 import { AccountControl, syncLabels } from "./accounts/AccountControl";
 import { SignInGate } from "./accounts/SignInGate";
 import { WorkoutTypesEditor } from "./WorkoutTypesEditor";
+import { CalendarConnect } from "./CalendarConnect";
 import { Modal } from "./Modal";
 import { useEffect, useRef, useState } from "react";
 import { useAppStatus } from "./useAppStatus";
@@ -945,6 +946,7 @@ function Calendar({
   onPrevious,
   onNext,
   onToday,
+  onConnect,
   compact = false,
 }: {
   state: State;
@@ -957,6 +959,7 @@ function Calendar({
   onPrevious: () => void;
   onNext: () => void;
   onToday: () => void;
+  onConnect: () => void;
   compact?: boolean;
 }) {
   return (
@@ -999,6 +1002,12 @@ function Calendar({
             </button>
           </div>
         </div>
+      </div>
+      <div className="calendar-connect-row">
+        <button className="text-button" onClick={onConnect}>
+          <CalendarDays size={15} /> Apple Calendar
+        </button>
+        <span className="muted small">Take your plans with you</span>
       </div>
       <div className="calendar-grid">
         {Array.from({ length: 7 }, (_, i) => {
@@ -1470,6 +1479,7 @@ function TrainingApp() {
   const goalKeys = Object.keys(state.settings.goals);
   const [newWorkout, setNewWorkout] = useState<SessionTemplate | null>(null);
   const [showNewType, setShowNewType] = useState(false);
+  const [showCalendarConnect, setShowCalendarConnect] = useState(false);
   const [shelfCategory, setShelfCategory] = useState<Category | null>(null);
   const recoveryLogs = profiles.data.profiles.flatMap((p) => p.state.logs);
   const { online, offlineReady } = useAppStatus();
@@ -1666,6 +1676,7 @@ function TrainingApp() {
     onPrevious: () => setWeek(addDays(week, -7)),
     onNext: () => setWeek(addDays(week, 7)),
     onToday: () => setWeek(currentStart),
+    onConnect: () => setShowCalendarConnect(true),
   };
   const copyReport = async () => {
     try {
@@ -2791,6 +2802,7 @@ function TrainingApp() {
             onClose={() => setPlan(null)}
           />
         )}
+        {showCalendarConnect && <CalendarConnect key={profiles.active.id} start={week} onClose={() => setShowCalendarConnect(false)} />}
         {swap && (
           <Modal title="Swap two days" onClose={() => setSwap(false)}>
             <form
