@@ -62,3 +62,7 @@ The automated suite includes real Postgres row-security and revision tests using
 On 22 October 2026 the migration was applied to the Crux Supabase project, the production URL and exact redirect allow list were configured, and the public client variables were added to GitHub. Email confirmation remains enabled. The live database passed [`supabase/verify-accounts.sql`](../supabase/verify-accounts.sql): own-account reads and saves, revision conflicts, cross-account read/write denial, ownership-change denial and anonymous read/write denial. This check uses temporary user IDs without credentials inside a transaction and rolls all test data back.
 
 Email/password signup and password-reset delivery require custom SMTP. Until then, the default Supabase mail service is limited to organization team addresses. The Google flow avoids that email delivery dependency once activated. A real user's email-confirmation flow has not yet been verified. Account deletion is not implemented. An expired session may need an online sign-in before online saving resumes.
+
+### Catalogue compatibility
+
+Apply `supabase/migrations/202610220005_preserve_catalogue.sql` after the account migrations. It preserves an existing personal catalogue when an older cached app saves a document without that new root field. New clients send the field explicitly, including an empty array when clearing it. Ownership checks, row security and revision conflict checks remain unchanged. Refresh every device to use the new catalogue, grade-count and kilogram controls.
