@@ -26,7 +26,9 @@ The Google feature is activated only when `VITE_GOOGLE_AUTH_ENABLED=true`. Keep 
 
 The website and source remain public on GitHub Pages. Private online account access is restricted on the backend. Device-only mode remains usable without signing in. A denied or revoked account keeps its cached records, but online access is refused and Crux asks the user to use an approved account.
 
-Google sign-in is prepared in source. The owner completed Google's initial app setup, and the three basic identity scopes are saved. The OAuth credentials still need to be saved in Supabase, followed by private access migration and hook activation, before the feature is considered operational. The frontend Google flag remains off during this setup.
+On 22 October 2026, the owner saved the Google OAuth credentials in Supabase, the Google provider was enabled, and the second migration plus a private approved-email list were applied. The Before User Created hook is enabled and calls `public.crux_before_user_created`. Nonce checks and the requirement for an email remain enabled. GitHub's `VITE_GOOGLE_AUTH_ENABLED` variable is now `true`.
+
+The live database passed `verify-google-accounts.sql`: approved-account access, private-list permissions, signup-hook decisions and grants, revision conflicts, account isolation, revocation without deletion, and anonymous denial. All fictional test records were rolled back. Hosted Supabase does not let its SQL Editor `postgres` role switch to `supabase_auth_admin`; the script checks that service role's grants explicitly and tests hook decisions as the database owner. Automated tests separately exercise the hook as the auth role. A real user's first Google consent and cloud save still need browser validation.
 
 The Crux mountain logo, homepage and public privacy/terms links are saved in Google branding. The matching app pages are `privacy.html` and `terms.html`, linked from the app footer. Branding remains in Testing; a Google verification badge or production branding approval is not claimed.
 

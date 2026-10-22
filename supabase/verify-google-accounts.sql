@@ -102,7 +102,18 @@ begin
   if not exists(select 1 from public.user_planners where user_id='7091bb15-8572-484e-b99c-c2a15cb09101' and revision=2)
     then raise exception 'Revocation deleted planner'; end if;
 end $$;
-set local role supabase_auth_admin;
+-- Hosted Supabase's postgres role cannot SET ROLE supabase_auth_admin.
+-- Check the auth service's grants explicitly, then test hook decisions as owner.
+do $$
+begin
+  if not has_function_privilege('supabase_auth_admin','public.crux_before_user_created(jsonb)','EXECUTE')
+    or not has_schema_privilege('supabase_auth_admin','crux_private','USAGE')
+    or not has_table_privilege('supabase_auth_admin','crux_private.approved_users','SELECT')
+    then raise exception 'Auth service hook permissions missing'; end if;
+  if has_function_privilege('anon','public.crux_before_user_created(jsonb)','EXECUTE')
+    or has_function_privilege('authenticated','public.crux_before_user_created(jsonb)','EXECUTE')
+    then raise exception 'Signup hook exposed to app users'; end if;
+end $$;
 do $$
 declare result jsonb;
 begin
