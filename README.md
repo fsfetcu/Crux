@@ -1,5 +1,7 @@
 # Crux — your climbing, in balance
 
+Vibe coded with Codex: a personal training app built around recovery, flexibility and steady progress.
+
 A complete mobile-first React + TypeScript app for flexible, recovery-based training, with installable PWA support, offline use, custom profiles, draggable exercises and day-specific exercise values. No app account, API keys, database server, or backend is needed. All personal training data stays in your browser's local storage. The standalone app has no login; hosting access controls are a separate choice.
 
 ## Run locally
@@ -19,7 +21,7 @@ npm run build # TypeScript validation and optimized production output
 npm run preview # serve the production build locally
 ```
 
-Deploy `dist/` on any static HTTPS host. Routes are internal UI sections, so no server routing configuration is needed. Root hosting works by default. For a project subdirectory, build with `APP_BASE_PATH=/crux-planner/ npm run build`; asset paths, the manifest and the offline worker all stay within that path.
+Deploy `dist/` on any static HTTPS host. Routes are internal UI sections, so no server routing configuration is needed. Root hosting works by default. For a project subdirectory, build with `APP_BASE_PATH=/Crux/ npm run build`; asset paths, the manifest and the offline worker all stay within that path.
 
 ## GitHub and GitHub Pages
 

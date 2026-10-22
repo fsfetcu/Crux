@@ -1,6 +1,6 @@
 node_modules/
 dist/
-.openai/*.local*
+.openai/
 *.log
 *.tsbuildinfo
 .sites-runtime/
