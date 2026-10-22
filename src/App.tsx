@@ -8,7 +8,9 @@ import { CalendarConnect } from "./CalendarConnect";
 import { CataloguePage } from "./CataloguePage";
 import { catalogueFromTemplate, templateInPlan } from "./catalogue";
 import { WorkoutRunner } from "./WorkoutRunner";
-import { completedExercises,createWorkoutDraft,parseWorkoutDraft,workoutDraftKey } from "./workoutDraft";
+import { TimerPage } from "./TimerPage";
+import { controlTimer } from "./timer";
+import { completedExercises,createWorkoutDraft,parseWorkoutDraft,workoutDraftKey,updateWorkoutTimer } from "./workoutDraft";
 import type { WorkoutDraft } from "./workoutDraft";
 import { checkForAppUpdate,refreshApp,useAppUpdates,useSafeAppUpdate,updateIsBlocked } from "./appUpdates";
 import { GradeCountFields, GradeStatistics, WeightInput } from "./TrainingFields";
@@ -22,6 +24,7 @@ import {
   ArrowRight,
   ArrowUpRight,
   CalendarDays,
+  Timer as TimerIcon,
   Play,
   RefreshCw,
   UserRound,
@@ -1827,6 +1830,7 @@ function TrainingApp() {
               ["planner", "Plan", CalendarDays],
               ["catalogue", "Catalogue", BookOpen],
               ["history", "Progress", History],
+              ["timer", "Timer", TimerIcon],
               ["settings", "Settings", SlidersHorizontal],
             ].map(([id, label, I]) => {
               const NavIcon = I as typeof Mountain;
@@ -1891,7 +1895,7 @@ function TrainingApp() {
                       ? "Catalogue"
                     : page === "history"
                       ? "Progress"
-                      : "Settings"}
+                      : page === "timer" ? "Timer" : "Settings"}
               </strong>
             </span>
             <div className="topbar-right">
@@ -2182,6 +2186,7 @@ function TrainingApp() {
                 </div>
               </>
             )}
+            <TimerPage owner={account.user?.id??null} profileId={profiles.active.id} visible={page==="timer"} onOpen={()=>navigate("timer")}/>
             {page === "catalogue" && <CataloguePage onViewPlan={() => navigate("planner")} renderEditor={(template,save) => <LibraryCard template={template} onSave={save} isNew catalogueMode/>}/>}
             {page === "planner" && (
               <div className="plan-page">
@@ -2811,9 +2816,9 @@ function TrainingApp() {
           </div>
         </main>
 
-        <nav className="bottom-navigation" aria-label="Phone navigation">{[["dashboard","Today",Mountain],["planner","Plan",CalendarDays],["catalogue","Catalogue",BookOpen],["history","Progress",History]].map(([id,label,I])=>{const NavIcon=I as typeof Mountain;return <button key={String(id)} aria-label={`Go to ${String(label)}`} aria-current={page===id?"page":undefined} className={page===id?"active":""} onClick={()=>navigate(String(id))}><NavIcon size={21}/><span>{String(label)}</span></button>;})}</nav>
+        <nav className="bottom-navigation" aria-label="Phone navigation">{[["dashboard","Today",Mountain],["planner","Plan",CalendarDays],["catalogue","Catalogue",BookOpen],["history","Progress",History],["timer","Timer",TimerIcon]].map(([id,label,I])=>{const NavIcon=I as typeof Mountain;return <button key={String(id)} aria-label={`Go to ${String(label)}`} aria-current={page===id?"page":undefined} className={page===id?"active":""} onClick={()=>navigate(String(id))}><NavIcon size={21}/><span>{String(label)}</span></button>;})}</nav>
         {profileMenu&&<Modal title="Your training" onClose={()=>setProfileMenu(false)}><div className="profile-menu-actions"><button className="button secondary" onClick={()=>{setProfileMenu(false);profiles.setShowProfiles(true);}}>Training profiles</button><button className="button secondary" onClick={()=>{setProfileMenu(false);account.setShowAccount(true);}}>Account & sync</button><button className="button secondary" onClick={()=>{setProfileMenu(false);navigate("settings");}}>Settings</button></div></Modal>}
-        {runningWorkout&&workoutDraft&&<WorkoutRunner draft={workoutDraft} onChange={updateDraft} onClose={()=>setRunningWorkout(false)} onDiscard={()=>{try{localStorage.removeItem(draftKey);setWorkoutDraft(null);setRunningWorkout(false);notify("Unfinished draft discarded. Your plan and history are unchanged.");}catch{notify("Could not discard the draft. Try again.");}}} onFinish={()=>{const d=workoutDraft;setRunningWorkout(false);setLogOptions({templateId:d.template.id,planId:d.planId,exercises:d.exercises.length?completedExercises(d):undefined,draftId:d.id,duration:Math.max(1,Math.min(1440,Math.round((Date.now()-Date.parse(d.started))/60000)))});}}/>}
+        {runningWorkout&&workoutDraft&&<WorkoutRunner draft={workoutDraft} onChange={updateDraft} onClose={()=>setRunningWorkout(false)} onDiscard={()=>{try{localStorage.removeItem(draftKey);setWorkoutDraft(null);setRunningWorkout(false);notify("Unfinished draft discarded. Your plan and history are unchanged.");}catch{notify("Could not discard the draft. Try again.");}}} onFinish={()=>{let d=workoutDraft;if(d.timer&&d.timer.pausedAt===null){d=updateWorkoutTimer(d,controlTimer(d.timer,"pause"));if(!updateDraft(d))return;}setRunningWorkout(false);setLogOptions({templateId:d.template.id,planId:d.planId,exercises:d.exercises.length?completedExercises(d):undefined,draftId:d.id,duration:Math.max(1,Math.min(1440,Math.round((Date.now()-Date.parse(d.started))/60000)))});}}/>}
         {logOptions && (
           <LogForm
             key={

@@ -10,7 +10,7 @@ const saved=()=>JSON.parse(localStorage.getItem(PROFILE_KEY)!);
 beforeEach(()=>{localStorage.clear();window.scrollTo=vi.fn();});
 afterEach(()=>{cleanup();vi.restoreAllMocks();});
 describe("phone app flows",()=>{
-  it("keeps Today focused and exposes all four sections and profile settings",async()=>{
+  it("keeps Today focused and exposes all five sections and profile settings",async()=>{
     const user=userEvent.setup();render(<App/>);
     expect(screen.queryByRole("region",{name:"Workouts to drag into your calendar"})).toBeNull();
     expect(screen.queryByRole("button",{name:"Drag Kilter projecting into calendar"})).toBeNull();
@@ -34,6 +34,7 @@ describe("phone app flows",()=>{
     const user=userEvent.setup();let view=render(<App/>);
     await user.click(screen.getByRole("button",{name:"Plan"}));await user.click(screen.getByRole("tab",{name:"Strength"}));
     await user.click(screen.getByRole("button",{name:"Start Full-body strength"}));let dialog=screen.getByRole("dialog");
+    await user.click(within(dialog).getByRole("button",{name:"Use existing set tracker"}));
     await user.click(within(dialog).getByRole("button",{name:"Bench press set 1"}));await user.click(within(dialog).getByRole("button",{name:"Bench press set 2"}));
     await user.type(within(dialog).getByLabelText("Bench press kilograms"),"52.5");
     expect(saved().profiles[0].state.logs).toEqual([]);
@@ -49,10 +50,12 @@ describe("phone app flows",()=>{
   it("keeps a rest timer accurate when the phone resumes after being hidden",async()=>{
     const user=userEvent.setup();let now=Date.now();vi.spyOn(Date,"now").mockImplementation(()=>now);render(<App/>);
     await user.click(screen.getByRole("button",{name:"Plan"}));await user.click(screen.getByRole("tab",{name:"Strength"}));await user.click(screen.getByRole("button",{name:"Start Full-body strength"}));
+    await user.click(screen.getByRole("button",{name:"Use existing set tracker"}));
     await user.click(screen.getByRole("button",{name:"Bench press set 1"}));now+=121000;fireEvent(document,new Event("visibilitychange"));expect(screen.getByRole("timer").textContent).toBe("Rest complete");
   });
   it("can discard an unfinished draft without removing the plan or logging a workout",async()=>{
     const user=userEvent.setup();render(<App/>);await user.click(screen.getByRole("button",{name:"Plan"}));await user.click(screen.getByRole("tab",{name:"Strength"}));await user.click(screen.getByRole("button",{name:"Start Full-body strength"}));
+    await user.click(screen.getByRole("button",{name:"Use existing set tracker"}));
     await user.click(screen.getByRole("button",{name:"Bench press set 1"}));const before=saved().profiles[0].state;
     await user.click(screen.getByRole("button",{name:"Discard unfinished workout"}));expect(screen.getByRole("alert").textContent).toContain("training history");await user.click(screen.getByRole("button",{name:"Discard draft"}));
     expect(saved().profiles[0].state).toEqual(before);expect(localStorage.getItem(workoutDraftKey(null,"original-climbing"))).toBeNull();expect(screen.queryByRole("button",{name:"Resume workout"})).toBeNull();
