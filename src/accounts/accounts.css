@@ -65,6 +65,34 @@
   padding: 28px;
   color: #385334;
 }
+.signin-page {
+  display: grid;
+  place-items: center;
+  min-height: 100svh;
+  padding: max(24px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  background: #f7f7f2;
+  color: #2c3e35;
+}
+.signin-card {
+  width: min(100%, 440px);
+  padding: clamp(24px, 6vw, 40px);
+  border: 1px solid #dce3d6;
+  border-radius: 28px;
+  background: #fff;
+}
+.signin-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 36px;
+  color: inherit;
+  font-size: 28px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.signin-card h1 { margin: 10px 0 20px; font-size: clamp(28px, 7vw, 36px); line-height: 1.15; letter-spacing: -1.2px; }
+.signin-card .form-stack { gap: 18px; }
+.signin-card .footer-legal { margin-top: 24px; }
 .cloud-notice {
   border: 1px solid #d8ddc6;
   border-radius: 16px;

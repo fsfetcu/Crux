@@ -1,11 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { publicAccountConfig } from "./config";
-import { oauthCallbackFailed, oauthFailureMessage } from "./oauth";
 
 export const googleAuthEnabled = import.meta.env.VITE_GOOGLE_AUTH_ENABLED === "true";
-export const initialOAuthError = typeof window !== "undefined" && oauthCallbackFailed(window.location.href)
-  ? oauthFailureMessage : "";
-
 const { url, key, error } = publicAccountConfig(
   import.meta.env.VITE_SUPABASE_URL,
   import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,

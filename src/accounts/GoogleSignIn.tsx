@@ -1,9 +1,45 @@
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAccount, accountRedirect } from "./AccountContext";
+import { useAppStatus } from "../useAppStatus";
+import { claimAutomaticGoogleRedirect, pauseAutomaticGoogleRedirect } from "./googleRedirect";
 
-export function GoogleSignIn() {
+export function GoogleSignIn({ automatic = false }: { automatic?: boolean }) {
   const account = useAccount();
+  const { client, setError } = account;
+  const { online } = useAppStatus();
   const [busy, setBusy] = useState(false);
+  const attempted = useRef(false);
+  const startSignIn = useCallback(async () => {
+    if (!client) return;
+    pauseAutomaticGoogleRedirect();
+    setBusy(true);
+    setError("");
+    try {
+      const { error } = await client.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: accountRedirect(),
+          queryParams: { prompt: "select_account" },
+        },
+      });
+      if (error) throw error;
+    } catch {
+      setError("Could not start Google sign-in. Check your connection and try again.");
+      setBusy(false);
+    }
+  }, [client, setError]);
+  useEffect(() => {
+    const restored = (event: PageTransitionEvent) => {
+      if (event.persisted) setBusy(false);
+    };
+    window.addEventListener("pageshow", restored);
+    return () => window.removeEventListener("pageshow", restored);
+  }, []);
+  useEffect(() => {
+    if (!automatic || !online || account.error || attempted.current) return;
+    attempted.current = true;
+    if (claimAutomaticGoogleRedirect()) void startSignIn();
+  }, [automatic, online, account.error, startSignIn]);
   return (
     <div className="form-stack">
       <p className="muted">
@@ -12,27 +48,8 @@ export function GoogleSignIn() {
       </p>
       <button
         className="google-signin"
-        disabled={busy}
-        onClick={async () => {
-          if (!account.client) return;
-          setBusy(true);
-          account.setError("");
-          try {
-            const { error } = await account.client.auth.signInWithOAuth({
-              provider: "google",
-              options: {
-                redirectTo: accountRedirect(),
-                queryParams: { prompt: "select_account" },
-              },
-            });
-            if (error) throw error;
-          } catch {
-            account.setError(
-              "Could not start Google sign-in. Check your connection and try again.",
-            );
-            setBusy(false);
-          }
-        }}
+        disabled={busy || !online}
+        onClick={() => void startSignIn()}
       >
         <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true">
           <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5Z" />
@@ -42,6 +59,7 @@ export function GoogleSignIn() {
         </svg>
         {busy ? "Opening Google…" : "Continue with Google"}
       </button>
+      {!online && <p role="status" className="account-message">You’re offline. Connect to the internet to sign in.</p>}
       <p className="small muted">
         Google handles sign-in and password recovery. Your device-only plan is
         brought into your account only when you choose.

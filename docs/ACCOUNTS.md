@@ -1,12 +1,14 @@
 # Crux accounts and online saving
 
-Crux stays on GitHub Pages. Supabase handles email/password authentication and a private planner document for each account. Device-only mode remains available. Signing in opens the account's own data, never another person's guest data. Importing a device-only planner is an explicit action with the existing backup preview and Restore confirmation.
+Crux stays on GitHub Pages. Supabase handles Google authentication and a private planner document for each account. The live app requires sign-in before opening a planner. Signing in opens the account's own data, never another person's guest data. Importing an earlier device-only planner is an explicit action with the existing backup preview and Restore confirmation. Local builds without Google mode retain the device-only and email/password flows.
 
 ## Google sign-in for a small group
 
 Google sign-in is the preferred setup for friends who already have Google accounts. It does not need a sending domain, custom SMTP or a separate Crux password. Google handles authentication and password recovery; Supabase still stores each person's private planner. Basic identity scopes are `openid`, `email` and `profile`. Crux does not request access to Gmail messages, Drive files or contacts.
 
-The Google feature is activated only when `VITE_GOOGLE_AUTH_ENABLED=true`. Keep this flag off until all backend setup below is complete. Existing email/password mode remains available while the Google connection is being configured. When enabled, the account dialog offers **Continue with Google** and a fallback for an existing password account; new email signup and password-reset links are hidden.
+The Google feature is activated only when `VITE_GOOGLE_AUTH_ENABLED=true`. Keep this flag off until all backend setup below is complete. When enabled, Crux waits to restore a session, then automatically opens Google's account chooser if the visitor is signed out. The planner is not mounted until a user is signed in. A restored session opens the planner directly, including its cached offline copy. Existing email/password mode remains available in builds without Google mode.
+
+An automatic redirect is attempted once per tab visit. Cancellation, browser Back, failed sign-in and intentional sign-out leave a **Continue with Google** button rather than restarting a loop. A new tab starts the automatic flow normally. Offline signed-out visitors see a connection message; reconnecting starts sign-in if no attempt has been made. When session storage is unavailable, sign-in starts from the button. Existing device-only records are retained for optional restoration after signing in.
 
 1. In a dedicated Google Cloud project, configure Google Auth Platform with Crux as the app name and an External audience. Google requires agreement to its API Services User Data Policy. Use only the three basic identity scopes above.
 2. Create a **Web application** OAuth client. Authorized JavaScript origin: `https://fsfetcu.github.io`. Authorized redirect URI: `https://cpnobpujwvodoshkkmaj.supabase.co/auth/v1/callback`. This callback differs from the app's final redirect URL, `https://fsfetcu.github.io/Crux/`.
@@ -24,7 +26,7 @@ The Google feature is activated only when `VITE_GOOGLE_AUTH_ENABLED=true`. Keep 
 7. Run [`verify-google-accounts.sql`](../supabase/verify-google-accounts.sql) in the SQL Editor as `postgres`. It checks approved and unapproved Google access, account isolation, revisions, signup-hook permissions, private-list protection, access revocation and anonymous denial. Fictional users and planner records are created inside a transaction and rolled back. This validates database enforcement; it does not replace a real Google sign-in check.
 8. Add the GitHub Actions repository variable `VITE_GOOGLE_AUTH_ENABLED=true`, then deploy `main`. Test the redirect, first sign-in, account save, sign-out and sign-in again. Each person must consent to Google sign-in for themselves. Existing device-only data is imported only through the explicit backup preview and Restore flow.
 
-The website and source remain public on GitHub Pages. Private online account access is restricted on the backend. Device-only mode remains usable without signing in. A denied or revoked account keeps its cached records, but online access is refused and Crux asks the user to use an approved account.
+The website and source remain public on GitHub Pages. The Google sign-in gate controls the app's entry flow; private online account access is enforced separately on the backend. A denied or revoked account keeps its cached records, but online access is refused and Crux asks the user to use an approved account.
 
 On 22 October 2026, the owner saved the Google OAuth credentials in Supabase, the Google provider was enabled, and the second migration plus a private approved-email list were applied. The Before User Created hook is enabled and calls `public.crux_before_user_created`. Nonce checks and the requirement for an email remain enabled. GitHub's `VITE_GOOGLE_AUTH_ENABLED` variable is now `true`.
 

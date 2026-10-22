@@ -2,12 +2,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { StrictMode } from "react";
 import type { Session, SupabaseClient } from "@supabase/supabase-js";
 import { AccountProvider } from "../src/accounts/AccountContext";
 import { AccountWorkspace } from "../src/App";
 import { firstProfile, PROFILE_KEY } from "../src/profiles";
 import { initialState } from "../src/model";
 import type { ProfileData } from "../src/profiles";
+import { GOOGLE_REDIRECT_KEY } from "../src/accounts/googleRedirect";
 const profile = (name: string) => {
   const data = firstProfile(initialState());
   data.profiles[0].name = name;
@@ -74,6 +76,10 @@ function fakeClient() {
       },
     ) => ({
       abortSignal: () => ({
+        maybeSingle: async () => ({
+          data: session?.user.id === args.p_user_id ? (rows.get(args.p_user_id) ?? null) : null,
+          error: null,
+        }),
         single: async () => {
           if (session?.user.id !== args.p_user_id)
             return {
@@ -109,6 +115,9 @@ function fakeClient() {
 }
 beforeEach(() => {
   localStorage.clear();
+  sessionStorage.clear();
+  window.history.replaceState(null, "", "/");
+  vi.spyOn(navigator, "onLine", "get").mockReturnValue(true);
   window.scrollTo = vi.fn();
 });
 afterEach(() => {
@@ -138,30 +147,98 @@ const login = async (
   await screen.findByRole("button", { name: "Manage account" });
 };
 describe("account UI and workspace switching", () => {
-  it("offers Google sign-in without sending email or uploading guest data", async () => {
+  it("automatically opens Google once in Strict Mode before showing a planner", async () => {
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(profile("Device-only planner")));
     const fake = fakeClient();
-    const user = userEvent.setup();
-    mount(fake, true);
-    await user.click(await screen.findByRole('button',{name:'Sign in or create account'}));
+    render(<StrictMode><AccountProvider client={fake.client} googleEnabled><AccountWorkspace /></AccountProvider></StrictMode>);
+    await vi.waitFor(() => expect(fake.api.auth.signInWithOAuth).toHaveBeenCalledTimes(1));
     expect(screen.queryByLabelText('Password')).toBeNull();
-    await user.click(screen.getByRole('button',{name:'Continue with Google'}));
+    expect(screen.queryByRole('button',{name:'Dashboard'})).toBeNull();
+    expect(screen.queryByRole('option',{name:'Device-only planner'})).toBeNull();
     expect(fake.api.auth.signInWithOAuth).toHaveBeenCalledWith({provider:'google',options:{redirectTo:expect.any(String),queryParams:{prompt:'select_account'}}});
     expect(fake.api.auth.signUp).not.toHaveBeenCalled();
     expect(fake.api.auth.resetPasswordForEmail).not.toHaveBeenCalled();
+    expect(JSON.parse(localStorage.getItem(PROFILE_KEY)!).profiles[0].name).toBe('Device-only planner');
     expect(screen.getByRole('button',{name:'Opening Google…'}).getAttribute('disabled')).not.toBeNull();
   });
   it("can retry when Google sign-in fails to start", async () => {
     const fake = fakeClient();
     fake.api.auth.signInWithOAuth.mockRejectedValueOnce(Error('offline'));
     const user = userEvent.setup(); mount(fake,true);
-    await user.click(await screen.findByRole('button',{name:'Sign in or create account'}));
-    await user.click(screen.getByRole('button',{name:'Continue with Google'}));
     expect(await screen.findByRole('alert')).toHaveProperty('textContent',expect.stringContaining('Could not start Google sign-in'));
+    expect(fake.api.auth.signInWithOAuth).toHaveBeenCalledTimes(1);
     expect(screen.getByRole('button',{name:'Continue with Google'}).getAttribute('disabled')).toBeNull();
-    await user.click(screen.getByRole('button',{name:'Use an existing password account'}));
-    expect(screen.getByLabelText('Password')).toBeTruthy();
-    expect(screen.queryByRole('button',{name:'Forgot password?'})).toBeNull();
-    expect(screen.queryByRole('button',{name:'Create an account'})).toBeNull();
+    await user.click(screen.getByRole('button',{name:'Continue with Google'}));
+    expect(fake.api.auth.signInWithOAuth).toHaveBeenCalledTimes(2);
+  });
+  it("waits for session restoration before deciding to redirect", async () => {
+    const fake=fakeClient();
+    let finish!: (value: {data:{session:Session|null};error:null}) => void;
+    fake.api.auth.getSession.mockImplementationOnce(() => new Promise(resolve => { finish=resolve; }));
+    mount(fake,true);
+    expect(screen.getByText('Restoring your sign-in…')).toBeTruthy();
+    expect(fake.api.auth.signInWithOAuth).not.toHaveBeenCalled();
+    await act(async () => finish({data:{session:null},error:null}));
+    await vi.waitFor(() => expect(fake.api.auth.signInWithOAuth).toHaveBeenCalledTimes(1));
+  });
+  it("restores an existing Google session directly into its private planner", async () => {
+    const fake=fakeClient(); fake.signIn('A'); mount(fake,true);
+    expect(await screen.findByRole('option',{name:'Account A'})).toBeTruthy();
+    expect(fake.api.auth.signInWithOAuth).not.toHaveBeenCalled();
+    expect(screen.queryByRole('heading',{name:'Your training, just for you.'})).toBeNull();
+  });
+  it("does not automatically restart after an OAuth cancellation", async () => {
+    window.history.replaceState(null,'','/?error=access_denied&error_description=untrusted-message');
+    const fake=fakeClient(); const user=userEvent.setup(); mount(fake,true);
+    expect(await screen.findByRole('alert')).toHaveProperty('textContent',expect.stringContaining('could not be completed'));
+    expect(screen.queryByText('untrusted-message')).toBeNull();
+    expect(fake.api.auth.signInWithOAuth).not.toHaveBeenCalled();
+    await user.click(screen.getByRole('button',{name:'Continue with Google'}));
+    expect(fake.api.auth.signInWithOAuth).toHaveBeenCalledTimes(1);
+  });
+  it("offers a manual retry when Back restores a previous redirect attempt", async () => {
+    sessionStorage.setItem(GOOGLE_REDIRECT_KEY,'1');
+    const fake=fakeClient(); const user=userEvent.setup(); mount(fake,true);
+    const button=await screen.findByRole('button',{name:'Continue with Google'});
+    expect(fake.api.auth.signInWithOAuth).not.toHaveBeenCalled();
+    await user.click(button);
+    expect(fake.api.auth.signInWithOAuth).toHaveBeenCalledTimes(1);
+  });
+  it("unlocks the sign-in button when browser Back restores the page from memory", async () => {
+    const fake=fakeClient(); mount(fake,true);
+    await screen.findByRole('button',{name:'Opening Google…'});
+    const event=new Event('pageshow'); Object.defineProperty(event,'persisted',{value:true});
+    await act(async () => { window.dispatchEvent(event); });
+    expect(screen.getByRole('button',{name:'Continue with Google'}).hasAttribute('disabled')).toBe(false);
+    expect(fake.api.auth.signInWithOAuth).toHaveBeenCalledTimes(1);
+  });
+  it("stays on sign-in after an intentional sign-out until the user continues", async () => {
+    const fake=fakeClient(); fake.signIn('A'); const user=userEvent.setup(); mount(fake,true);
+    await user.click(await screen.findByRole('button',{name:'Manage account'}));
+    await user.click(screen.getByRole('button',{name:'Sign out'}));
+    expect(await screen.findByRole('heading',{name:'Your training, just for you.'})).toBeTruthy();
+    expect(screen.queryByRole('button',{name:'Dashboard'})).toBeNull();
+    expect(fake.api.auth.signInWithOAuth).not.toHaveBeenCalled();
+    await user.click(screen.getByRole('button',{name:'Continue with Google'}));
+    expect(fake.api.auth.signInWithOAuth).toHaveBeenCalledTimes(1);
+  });
+  it("waits offline and starts once when connectivity returns", async () => {
+    const online=vi.spyOn(navigator,'onLine','get').mockReturnValue(false);
+    const fake=fakeClient(); mount(fake,true);
+    expect(await screen.findByText(/You’re offline/)).toBeTruthy();
+    expect(fake.api.auth.signInWithOAuth).not.toHaveBeenCalled();
+    expect(screen.getByRole('button',{name:'Continue with Google'}).hasAttribute('disabled')).toBe(true);
+    online.mockReturnValue(true);
+    await act(async () => { window.dispatchEvent(new Event('online')); });
+    await vi.waitFor(() => expect(fake.api.auth.signInWithOAuth).toHaveBeenCalledTimes(1));
+  });
+  it("keeps manual sign-in available when session storage is blocked", async () => {
+    vi.spyOn(Storage.prototype,'setItem').mockImplementation(() => { throw Error('Blocked storage'); });
+    const fake=fakeClient(); const user=userEvent.setup(); mount(fake,true);
+    const button=await screen.findByRole('button',{name:'Continue with Google'});
+    expect(fake.api.auth.signInWithOAuth).not.toHaveBeenCalled();
+    await user.click(button);
+    expect(fake.api.auth.signInWithOAuth).toHaveBeenCalledTimes(1);
   });
   it("loads the correct account and keeps its history separate from guest and another account", async () => {
     localStorage.setItem(

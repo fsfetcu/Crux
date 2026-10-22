@@ -1,6 +1,7 @@
 import { ProfileProvider, useProfiles, useTypeLabels } from "./ProfileContext";
 import { AccountProvider, useAccount } from "./accounts/AccountContext";
 import { AccountControl, syncLabels } from "./accounts/AccountControl";
+import { SignInGate } from "./accounts/SignInGate";
 import { WorkoutTypesEditor } from "./WorkoutTypesEditor";
 import { Modal } from "./Modal";
 import { useEffect, useRef, useState } from "react";
@@ -1449,6 +1450,7 @@ export function AccountWorkspace() {
         Restoring your sign-in…
       </div>
     );
+  if (account.googleEnabled && !account.user) return <SignInGate />;
   return (
     <ProfileProvider key={account.user?.id ?? "device-only"}>
       <ActiveTrainingApp />

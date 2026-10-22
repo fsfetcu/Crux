@@ -4,7 +4,7 @@ Vibe coded with Codex: a personal training app built around recovery, flexibilit
 
 [Open Crux](https://fsfetcu.github.io/Crux/) · [Source on GitHub](https://github.com/fsfetcu/Crux)
 
-A complete mobile-first React + TypeScript app for flexible, recovery-based training, with installable PWA support, offline use, custom profiles, draggable exercises and day-specific exercise values. Device-only mode needs no backend. Optional Supabase accounts keep a separate private planner online for each person, with an offline device copy and sign-in across devices. Authentication tokens are kept out of training backups.
+A complete mobile-first React + TypeScript app for flexible, recovery-based training, with installable PWA support, offline use, custom profiles, draggable exercises and day-specific exercise values. The live app opens Google sign-in automatically for signed-out visitors; existing sessions open their private planner directly. Supabase keeps a separate planner online for each person, with an offline device copy and sign-in across devices. Authentication tokens are kept out of training backups. Local builds without Google mode can still use device-only storage without a backend.
 
 ## Accounts and online saving
 
@@ -114,7 +114,7 @@ The app intentionally starts with **no invented training history or check-ins**.
 
 ## Verification
 
-143 automated tests cover recommendations, profiles, logging, day-specific exercise edits, backups, planning, offline behavior, account switching, sync conflicts, Google sign-in and private membership enforcement. The worker tests run at both `/` and `/crux-planner/`, including scoped asset caching, failed updates, sign-in-page rejection and retaining another project's cache. TypeScript and the production build pass.
+151 automated tests cover recommendations, profiles, logging, day-specific exercise edits, backups, planning, offline behavior, account switching, sync conflicts, automatic Google sign-in and private membership enforcement. Sign-in checks include session restoration, cancellation, browser Back, logout, failed redirects and reconnecting from offline. The worker tests run at both `/` and `/crux-planner/`, including scoped asset caching, failed updates, sign-in-page rejection and retaining another project's cache. TypeScript and the production build pass.
 
 The GitHub-ready production build was checked in a real browser at `/crux-planner/`. The icon loaded from that path, the manifest referenced that path, and the interface fit a 390-pixel phone viewport without horizontal overflow. Saved a daily check-in and a bench-press plan with 4 × 8 and 2 min rest, closed the tab, stopped the preview server (HTTP 000), and reopened the cached app. Both the check-in and the exact exercise values remained available offline.
 

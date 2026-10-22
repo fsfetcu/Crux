@@ -13,15 +13,15 @@
   <article>
     <h1>Your training, your privacy.</h1>
     <p class="muted">Privacy policy · Updated 22 October 2026</p>
-    <p>Crux is a personal training planner for a small group of friends. This page explains the information used by the app and its optional online accounts.</p>
+    <p>Crux is a personal training planner for a small group of friends. The live app requires Google sign-in before opening your planner. This page explains the information used by the app and its accounts.</p>
     <h2>Information you provide</h2>
     <p>Crux saves your training profiles, workout library, calendar, completed sessions, projects, notes and recovery check-ins. Only enter information you want to keep in your planner. JSON exports contain these records.</p>
     <h2>Google sign-in</h2>
-    <p>When Google sign-in is enabled and you choose to use it, Google and Supabase provide basic identity information: your account identifier, email address, name and profile picture. Supabase stores identity information to authenticate you. Crux uses your identity to open your own planner and check whether your email is approved for access.</p>
+    <p>If you are signed out, Crux opens Google sign-in automatically. When you complete sign-in, Google and Supabase provide basic identity information: your account identifier, email address, name and profile picture. Supabase stores identity information to authenticate you. Crux uses your identity to open your own planner and check whether your email is approved for access.</p>
     <p>Crux requests only basic sign-in scopes. It does not request your Gmail messages, Drive files or contacts. Google user data is used for authentication and account access, not advertising, sale or AI model training.</p>
     <h2>Where information is stored</h2>
     <ul>
-      <li>Device-only planners stay in this browser's local storage.</li>
+      <li>Earlier device-only planners remain in this browser's local storage. You can explicitly restore them into your account after signing in.</li>
       <li>Signed-in planners are stored in Supabase and cached in the browser for offline use. Training records are sent to Supabase when synchronizing.</li>
       <li>Sign-in tokens are stored by the Supabase client in the browser. They are excluded from training exports.</li>
       <li>The approved-email list is kept privately in Supabase. It is not published in the app's source code.</li>
@@ -30,7 +30,7 @@
     <h2>Services used</h2>
     <p>GitHub Pages hosts the website, Google provides Google sign-in, and Supabase provides online authentication and storage. These services may process connection and security metadata, such as IP addresses and login timestamps, under their own policies. Crux does not add advertising trackers or third-party analytics.</p>
     <h2>Your choices and deletion</h2>
-    <p>You can use device-only mode, export your planner, or sign out. A fully synchronized account copy is removed from this browser on sign-out; unsynchronized edits are retained separately for your next sign-in. Browser settings can remove local data. Keep a JSON backup before clearing it.</p>
+    <p>You can export your planner or sign out. A fully synchronized account copy is removed from this browser on sign-out; unsynchronized edits are retained separately for your next sign-in. Browser settings can remove local data. Keep a JSON backup before clearing it.</p>
     <p>Online records remain until removed by the project owner. For account or data deletion, contact the person who gave you access to Crux. Removing Google access or signing out does not automatically delete online records or copies you have downloaded.</p>
     <h2>Questions</h2>
     <p>Contact the person who invited you for access, privacy or deletion requests. The public project and maintainer are listed on <a href="https://github.com/fsfetcu/Crux">GitHub</a>. Do not post private training records or credentials in public issues.</p>

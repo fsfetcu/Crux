@@ -2,13 +2,17 @@ import { createContext, useContext, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import type { Session, SupabaseClient } from "@supabase/supabase-js";
 import { Modal } from "../Modal";
-import { accountRedirect, googleAuthEnabled, initialOAuthError, supabase } from "./client";
+import { accountRedirect, googleAuthEnabled, supabase } from "./client";
+import { oauthCallbackFailed, oauthFailureMessage } from "./oauth";
+import { clearGoogleRedirectAttempt, pauseAutomaticGoogleRedirect } from "./googleRedirect";
 
 function useAccountStore(client: SupabaseClient | null, googleEnabled: boolean) {
   const [session, setSession] = useState<Session | null>(null);
   const [ready, setReady] = useState(!client);
-  const [error, setError] = useState(initialOAuthError);
-  const [showAccount, setShowAccount] = useState(!!initialOAuthError);
+  const [error, setError] = useState(() =>
+    typeof window !== "undefined" && oauthCallbackFailed(window.location.href) ? oauthFailureMessage : "",
+  );
+  const [showAccount, setShowAccount] = useState(!!error);
   const [recovering, setRecovering] = useState(false);
   useEffect(() => {
     if (!client) return;
@@ -19,6 +23,8 @@ function useAccountStore(client: SupabaseClient | null, googleEnabled: boolean) 
     } = client.auth.onAuthStateChange((event, next) => {
       if (!active) return;
       observed = true;
+      if (next?.user) clearGoogleRedirectAttempt();
+      else if (googleEnabled && event === "SIGNED_OUT") pauseAutomaticGoogleRedirect();
       setSession(next);
       setReady(true);
       if (event === "PASSWORD_RECOVERY") setRecovering(true);
@@ -31,6 +37,7 @@ function useAccountStore(client: SupabaseClient | null, googleEnabled: boolean) 
         if (!active || observed) return;
         if (error)
           setError("Could not restore your sign-in. Try signing in again.");
+        if (data.session?.user) clearGoogleRedirectAttempt();
         setSession(data.session);
         setReady(true);
       })
@@ -44,9 +51,10 @@ function useAccountStore(client: SupabaseClient | null, googleEnabled: boolean) 
       active = false;
       subscription.unsubscribe();
     };
-  }, [client]);
+  }, [client, googleEnabled]);
   const signOut = async () => {
     if (!client) return true;
+    if (googleEnabled) pauseAutomaticGoogleRedirect();
     const { error } = await client.auth.signOut({ scope: "local" });
     if (error) {
       setError(error.message);
