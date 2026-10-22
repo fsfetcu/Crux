@@ -255,3 +255,23 @@ label { color:#465342; }
 .timer-live-options { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:16px; margin-top:20px; }
 .timer-live-options label { text-align:left; }
 .timer-live-options select { max-width:100%; font-size:14px; }
+
+/* Keep action labels noticeable without increasing the page's body type. */
+:root { --action-font-size:14px; --secondary-action-font-size:13px; }
+:root .button, :root .shelf-add-workout { font-size:var(--action-font-size); font-weight:550; }
+:root .text-button, :root .alternative button, :root .pool-add, :root .toast-undo { font-size:var(--secondary-action-font-size); font-weight:550; }
+:root .activity-category, :root .filter-tabs button, :root .choice { font-size:var(--secondary-action-font-size); font-weight:500; }
+:root .timer-mode-tabs button { font-size:var(--action-font-size); font-weight:500; }
+:root .sidebar nav button { font-size:var(--action-font-size); }
+:root .bottom-navigation button { font-size:12px; }
+:root .account-button, :root .active-profile-pill { font-size:var(--secondary-action-font-size); }
+:root .update-check, :root .update-pill { font-size:12px; }
+:root .floating-timer { font-size:var(--action-font-size); }
+:root .builder-selection-summary button { font-size:var(--secondary-action-font-size); }
+:root .project-details > summary, :root .exercise-tags-editor summary, :root .catalogue-exercise-preview summary { font-size:var(--secondary-action-font-size); }
+:root .library-card > summary strong { font-size:var(--action-font-size); }
+:root .workout-bubble strong { font-size:var(--secondary-action-font-size); }
+:root .set-toggle span { font-size:12px; }
+:root .phone-date-tab > span { font-size:11px; }
+:root .phone-date-tab > small { font-size:9px; }
+.timer-actions .button { white-space:normal; }
