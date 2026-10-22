@@ -1,0 +1,761 @@
+.session-shelf {
+  margin-top: 24px;
+  padding: 21px 22px 16px;
+  background: #eef1e7;
+  border: 1px solid #dde4d4;
+  border-radius: 19px;
+  transition:
+    background 0.2s,
+    box-shadow 0.2s;
+}
+.shelf-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 17px;
+}
+.shelf-heading h3 {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #435d3c;
+}
+.shelf-heading h3 svg {
+  color: #91a079;
+}
+.shelf-heading p {
+  font-size: 11px;
+  margin: 6px 0 0;
+  color: #8a997d;
+}
+.touch-drag-hint {
+  font-size: 10px;
+  color: #8b987e;
+  white-space: nowrap;
+}
+.workout-shelf {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(136px, 1fr));
+  gap: 9px;
+}
+.workout-bubble {
+  --bubble-bg: #f8f0e6;
+  --bubble-line: #e9d9c5;
+  --bubble-ink: #986d45;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid var(--bubble-line);
+  background: var(--bubble-bg);
+  color: var(--bubble-ink);
+  border-radius: 19px;
+  padding: 11px 13px;
+  min-width: 139px;
+  min-height: 57px;
+  flex: 1;
+  text-align: left;
+  position: relative;
+  box-shadow: 0 2px 2px #26381f04;
+  line-height: 1.35;
+}
+.workout-bubble.volume {
+  --bubble-bg: #edf3f7;
+  --bubble-line: #d7e3eb;
+  --bubble-ink: #648096;
+}
+.workout-bubble.chill {
+  --bubble-bg: #f2f6e8;
+  --bubble-line: #dce6ca;
+  --bubble-ink: #748a52;
+}
+.workout-bubble.strength {
+  --bubble-bg: #f4eef7;
+  --bubble-line: #e2d5e9;
+  --bubble-ink: #947c9d;
+}
+.workout-bubble.rest {
+  --bubble-bg: #edf4ee;
+  --bubble-line: #d9e5d9;
+  --bubble-ink: #718d79;
+}
+.library-bubble {
+  cursor: grab;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  transition:
+    transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1.5),
+    box-shadow 0.2s,
+    border-color 0.2s,
+    opacity 0.15s;
+}
+.library-bubble:hover {
+  transform: translateY(-3px) rotate(-1deg);
+  box-shadow: 0 8px 15px #3d513513;
+  border-color: var(--bubble-ink);
+}
+.library-bubble:active {
+  cursor: grabbing;
+  transform: scale(0.97);
+}
+.bubble-symbol {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 27px;
+  height: 27px;
+  flex-shrink: 0;
+}
+.bubble-name {
+  flex: 1;
+  min-width: 0;
+}
+.workout-bubble strong {
+  display: block;
+  font-size: 12px;
+  font-weight: 550;
+  letter-spacing: -0.1px;
+}
+.workout-bubble small {
+  display: block;
+  font-size: 9px;
+  margin-top: 3px;
+  opacity: 0.65;
+}
+.bubble-grip {
+  opacity: 0.35;
+  flex-shrink: 0;
+}
+.shelf-footnote {
+  font-size: 9px;
+  color: #9ba58f;
+  margin: 13px 0 0;
+}
+.is-dragging {
+  opacity: 0.27 !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+.drag-in-progress {
+  background: #e9efdf;
+  box-shadow: inset 0 0 0 1px #c5d4b5;
+}
+.drag-bubble {
+  min-width: 174px;
+  max-width: 240px;
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 23px;
+  box-shadow:
+    0 20px 36px #23351d30,
+    0 3px 7px #23351d20,
+    0 0 0 4px #ffffffb3;
+  cursor: grabbing;
+  pointer-events: none;
+  animation: bubble-float 0.85s ease-in-out infinite alternate;
+}
+.drag-bubble > span {
+  flex: 1;
+  min-width: 0;
+}
+.drag-bubble strong {
+  font-size: 13px;
+}
+.drag-bubble small {
+  font-size: 9px;
+}
+.drag-bubble > svg {
+  flex-shrink: 0;
+}
+.dragging-workout,
+.dragging-workout * {
+  cursor: grabbing !important;
+}
+.dragging-workout {
+  user-select: none;
+  -webkit-user-select: none;
+  overscroll-behavior: none;
+}
+.calendar-day {
+  transition:
+    background 0.18s,
+    box-shadow 0.18s;
+}
+.calendar-day.accepts-workout {
+  background: #fafcf6;
+}
+.calendar-day.drop-target {
+  background: #eaf1df;
+  box-shadow: inset 0 0 0 2px #9bb17e;
+  border-radius: 15px;
+}
+.calendar-day.drop-target .open-day {
+  visibility: hidden;
+}
+.drop-day-hint {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 500;
+  color: #7a925f;
+  background: #eaf1dfb8;
+  border: 2px dashed #a0b582;
+  border-radius: 15px;
+  z-index: 4;
+  animation: drop-zone-breathe 0.7s ease-in-out infinite alternate;
+}
+.drop-plus {
+  font-size: 22px;
+  font-weight: 400;
+  line-height: 1;
+}
+.calendar-day.drop-target .day-heading {
+  position: relative;
+  z-index: 5;
+}
+.calendar-session.completed,
+.calendar-session.rounded-workout {
+  border-radius: 15px;
+}
+.calendar-session.rounded-workout {
+  padding: 11px 8px 31px;
+  min-height: 86px;
+  background: #faf8f0;
+  border-style: solid;
+  border-color: #dfd8c9;
+  box-shadow: 0 2px 4px #3b4a2e07;
+  animation: workout-arrive 0.38s cubic-bezier(0.2, 0.9, 0.25, 1.25);
+  position: relative;
+}
+.calendar-session.rounded-workout.hard {
+  background: #fbf3e9;
+  border-color: #ebdcca;
+}
+.calendar-session.rounded-workout.volume {
+  background: #eef3f7;
+  border-color: #dbe5ec;
+}
+.calendar-session.rounded-workout.chill {
+  background: #f2f6e8;
+  border-color: #dfe8cc;
+}
+.calendar-session.rounded-workout.strength {
+  background: #f5eff7;
+  border-color: #e4d9e9;
+}
+.calendar-session.rounded-workout.rest {
+  background: #eff5ed;
+  border-color: #dce7d9;
+}
+.rounded-workout .session-title {
+  padding-right: 12px;
+  line-height: 1.45;
+  min-height: 30px;
+  gap: 5px;
+}
+.plan-drag-handle {
+  position: absolute;
+  right: 3px;
+  top: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 26px;
+  border-radius: 9px;
+  background: transparent;
+  color: inherit;
+  opacity: 0.5;
+  cursor: grab;
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+}
+.plan-drag-handle:hover {
+  background: #ffffff94;
+  opacity: 1;
+}
+.rounded-workout .session-actions {
+  left: 6px;
+  right: 6px;
+  bottom: 4px;
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  opacity: 1;
+  background: transparent;
+  gap: 3px;
+}
+.rounded-workout .session-actions > button {
+  min-width: 23px;
+  min-height: 22px;
+  border-radius: 8px;
+  background: #ffffff7d;
+  padding: 3px;
+}
+.rounded-workout .session-actions > button:hover {
+  background: white;
+}
+.rounded-workout .plan-warning {
+  top: auto;
+  bottom: 9px;
+  left: 8px;
+  right: auto;
+}
+.calendar-session.completed {
+  padding: 10px 8px;
+  line-height: 1.5;
+}
+@keyframes bubble-float {
+  from {
+    transform: scale(1.04) rotate(-2.2deg);
+    border-radius: 24px 19px 26px 20px;
+  }
+  to {
+    transform: scale(1.065, 1.025) rotate(1.4deg);
+    border-radius: 19px 25px 20px 26px;
+  }
+}
+@keyframes workout-arrive {
+  0% {
+    transform: scale(0.86, 0.92);
+    opacity: 0.6;
+  }
+  60% {
+    transform: scale(1.045, 1.025);
+    opacity: 1;
+  }
+  82% {
+    transform: scale(0.99, 1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes drop-zone-breathe {
+  from {
+    box-shadow: inset 0 0 0 0 #d3dfc4;
+  }
+  to {
+    box-shadow: inset 0 0 0 4px #d3dfc477;
+  }
+}
+@media (max-width: 1200px) {
+  .workout-bubble {
+    min-width: 137px;
+  }
+  .touch-drag-hint {
+    font-size: 9px;
+  }
+  .rounded-workout .session-title {
+    font-size: 10px;
+  }
+}
+@media (max-width: 950px) {
+  .calendar-session.rounded-workout {
+    min-width: 138px;
+    min-height: 80px;
+    padding-right: 26px;
+    padding-bottom: 28px;
+  }
+  .rounded-workout .session-title {
+    font-size: 11px;
+    padding: 0;
+  }
+  .rounded-workout .session-actions {
+    flex-direction: row;
+    bottom: 4px;
+    right: 5px;
+  }
+  .plan-drag-handle {
+    width: 25px;
+    height: 30px;
+  }
+}
+@media (max-width: 650px) {
+  .session-shelf {
+    padding: 20px 17px 15px;
+    border-radius: 20px;
+    margin-top: 23px;
+  }
+  .shelf-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 15px;
+  }
+  .shelf-heading h3 {
+    font-size: 13px;
+  }
+  .shelf-heading p {
+    font-size: 11px;
+    line-height: 1.65;
+  }
+  .touch-drag-hint {
+    font-size: 10px;
+    color: #899978;
+  }
+  .workout-shelf {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 9px;
+  }
+  .workout-bubble {
+    min-width: 0;
+    width: 100%;
+    padding: 11px 10px;
+    gap: 6px;
+    min-height: 62px;
+    border-radius: 18px;
+  }
+  .workout-bubble strong {
+    font-size: 11px;
+  }
+  .bubble-symbol {
+    width: 24px;
+  }
+  .workout-bubble small {
+    font-size: 9px;
+  }
+  .bubble-grip {
+    width: 12px;
+  }
+  .shelf-footnote {
+    font-size: 10px;
+    line-height: 1.6;
+    margin-top: 14px;
+  }
+  .calendar-day {
+    grid-template-columns: 39px minmax(0, 1fr) 26px;
+    column-gap: 8px;
+  }
+  .calendar-day .day-items {
+    min-width: 0;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .calendar-session.rounded-workout {
+    max-width: none;
+    width: 100%;
+    min-width: 0;
+    min-height: 82px;
+    padding: 12px 34px 31px 10px;
+    border-radius: 17px;
+  }
+  .calendar-session.completed {
+    max-width: none;
+    width: 100%;
+    min-width: 0;
+    border-radius: 14px;
+    padding: 12px 10px;
+  }
+  .plan-drag-handle {
+    top: 5px;
+    right: 5px;
+    width: 29px;
+    height: 32px;
+  }
+  .rounded-workout .session-actions {
+    bottom: 4px;
+    right: 7px;
+  }
+  .rounded-workout .session-actions > button {
+    min-width: 30px;
+    min-height: 26px;
+    border-radius: 9px;
+  }
+  .rounded-workout .session-title {
+    font-size: 11px;
+  }
+  .rounded-workout .plan-warning {
+    bottom: 11px;
+    left: 11px;
+  }
+  .drag-bubble {
+    min-width: 170px;
+    padding: 14px;
+    max-width: 215px;
+  }
+  .drop-day-hint {
+    font-size: 11px;
+  }
+  .session-shelf + .calendar-panel {
+    margin-top: 17px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .workout-bubble,
+  .calendar-day,
+  .session-shelf {
+    transition: none !important;
+  }
+  .drag-bubble,
+  .calendar-session.rounded-workout,
+  .drop-day-hint {
+    animation: none !important;
+  }
+}
+
+/* Categories contain draggable activities; exercise selections build a routine. */
+.activity-categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 0 0 16px;
+}
+.activity-category {
+  border: 1px solid #d8e1cf;
+  background: #f7f9f2;
+  border-radius: 999px;
+  padding: 9px 16px;
+  font: inherit;
+  font-size: 11px;
+  color: #75816c;
+  cursor: pointer;
+}
+.activity-category.selected {
+  background: #425b3e;
+  color: #fff;
+  border-color: #425b3e;
+  box-shadow: 0 2px 5px #31422c13;
+}
+.category-activities {
+  min-height: 70px;
+}
+.routine-activities + .routine-activities {
+  border-top: 1px solid #dce3d3;
+  padding-top: 16px;
+  margin-top: 16px;
+}
+.routine-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+  color: #52634c;
+  margin-bottom: 12px;
+}
+.routine-heading small {
+  font-size: 10px;
+  opacity: 0.6;
+  margin-left: 7px;
+}
+.routine-heading .text-button {
+  font-size: 10px;
+}
+.exercise-effort {
+  display: block;
+  font-size: 9px;
+  margin-top: 5px;
+  opacity: 0.75;
+}
+.routine-activities .workout-shelf {
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+}
+.routine-activities .workout-bubble {
+  min-height: 87px;
+  align-items: center;
+}
+.workout-bubble strong {
+  overflow-wrap: anywhere;
+}
+.rounded-workout.has-exercises {
+  flex-direction: column;
+  gap: 8px;
+}
+.planned-exercise-list {
+  display: grid;
+  gap: 5px;
+  width: 100%;
+  min-width: 0;
+}
+.planned-exercise {
+  display: flex;
+  min-width: 0;
+  width: 100%;
+  align-items: center;
+  background: #ffffff94;
+  border: 1px solid #ffffffa6;
+  border-radius: 11px;
+}
+.planned-exercise-grip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+  padding: 7px 4px;
+  text-align: left;
+  cursor: grab;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  color: inherit;
+}
+.planned-exercise-grip > svg {
+  flex-shrink: 0;
+  opacity: 0.45;
+}
+.planned-exercise-grip > span {
+  min-width: 0;
+}
+.planned-exercise strong {
+  font-size: 9px;
+  line-height: 1.5;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.planned-exercise small {
+  font-size: 8px;
+}
+.remove-exercise {
+  flex-shrink: 0;
+  width: 22px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  color: inherit;
+  opacity: 0.55;
+}
+.remove-exercise:hover {
+  opacity: 1;
+  background: #fff;
+}
+.plan-exercise-picker {
+  border: 1px solid #e1e6da;
+  border-radius: 15px;
+  padding: 14px;
+}
+.plan-exercise-picker legend {
+  font-size: 12px;
+  color: #63765b;
+  padding: 0 5px;
+}
+.plan-exercise-options {
+  display: grid;
+  gap: 12px;
+  border-top: 1px solid #e4e8dd;
+  margin-top: 13px;
+  padding-top: 13px;
+}
+.plan-exercise-options span {
+  min-width: 0;
+}
+.plan-exercise-options small {
+  display: block;
+  color: #8a9483;
+  font-size: 11px;
+  margin-top: 3px;
+}
+.day-exercise-help {
+  margin: 0 0 8px;
+}
+.day-exercise-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+}
+.day-exercise-actions button {
+  font-size: 11px;
+  min-height: 32px;
+}
+.day-exercise {
+  min-width: 0;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e4e8dd;
+}
+.day-exercise:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+.day-exercise-fields {
+  display: grid;
+  grid-template-columns: 0.65fr 1.2fr 1fr;
+  gap: 8px;
+  margin-top: 10px;
+}
+.day-exercise-fields label {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  font-size: 11px;
+  color: #63765b;
+}
+.day-exercise-fields input {
+  width: 100%;
+  min-width: 0;
+  padding: 10px 8px;
+}
+.exercise-tags-editor {
+  margin-top: 12px;
+  padding: 10px 0 0;
+  border-top: 1px solid #e2e7db;
+}
+.exercise-tags-editor summary {
+  font-size: 11px;
+  color: #809070;
+  cursor: pointer;
+}
+.exercise-tags-editor[open] > label {
+  display: grid;
+  gap: 7px;
+  margin-top: 14px;
+  font-size: 12px;
+}
+.exercise-tags-editor .tag-options {
+  gap: 6px;
+}
+.exercise-tags-editor .checkbox-label {
+  font-size: 10px;
+}
+.exercise-tags-editor .checkbox-label input {
+  width: 14px;
+}
+@media (max-width: 650px) {
+  .activity-category {
+    padding: 9px 12px;
+    font-size: 11px;
+  }
+  .routine-activities .workout-shelf {
+    grid-template-columns: 1fr 1fr;
+  }
+  .routine-activities .workout-bubble {
+    min-height: 100px;
+    padding: 12px 9px;
+  }
+  .routine-activities .bubble-symbol {
+    display: none;
+  }
+  .routine-heading {
+    align-items: flex-start;
+  }
+  .routine-heading > span small {
+    display: block;
+    margin: 4px 0 0;
+  }
+  .planned-exercise-grip {
+    padding: 9px 6px;
+  }
+  .planned-exercise strong {
+    font-size: 11px;
+  }
+  .planned-exercise small {
+    font-size: 9px;
+  }
+  .remove-exercise {
+    width: 29px;
+    min-height: 35px;
+  }
+}
