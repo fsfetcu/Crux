@@ -23,7 +23,7 @@ function layout(){
 function drag(){act(()=>monitor.onDragStart?.({activatorEvent:new MouseEvent("mousedown",{clientX:150,clientY:600})} as any));}
 function move(x:number,y=200){fireEvent.mouseMove(window,{clientX:x,clientY:y});}
 beforeEach(()=>{vi.useFakeTimers();Object.defineProperty(document,"visibilityState",{configurable:true,value:"visible"});});
-afterEach(()=>{cleanup();vi.useRealTimers();vi.restoreAllMocks();});
+afterEach(()=>{cleanup();vi.useRealTimers();vi.restoreAllMocks();vi.unstubAllGlobals();});
 describe("horizontal weekly calendar",()=>{
   it("only advances at visible edges, stays bounded, and has a neutral centre",()=>{
     expect(calendarEdgeDirection(bounds,{x:310,y:200},0,1800)).toBe(1);
@@ -37,6 +37,45 @@ describe("horizontal weekly calendar",()=>{
     render(<Harness/>);layout();
     act(()=>{rail.scrollLeft=600;fireEvent.scroll(rail);});expect(screen.getByTestId("selection").textContent).toBe("2026-10-21");
     fireEvent.click(screen.getByText("Saturday"));expect(scroll).toHaveBeenCalledWith({left:1500,behavior:"smooth"});expect(screen.getByTestId("selection").textContent).toBe("2026-10-24");
+  });
+  it("keeps the destination selected throughout an animated slide past earlier dates",()=>{
+    render(<Harness/>);layout();scroll.mockImplementation(()=>{});
+    fireEvent.click(screen.getByText("Saturday"));
+    for(const left of [50,300,600,900,1200,1450]){
+      act(()=>{rail.scrollLeft=left;fireEvent.scroll(rail);});
+      expect(screen.getByTestId("selection").textContent).toBe("2026-10-24");
+    }
+    act(()=>{rail.scrollLeft=1500;fireEvent.scroll(rail);});
+    expect(screen.getByTestId("selection").textContent).toBe("2026-10-24");
+    act(()=>{rail.scrollLeft=1200;fireEvent.scroll(rail);});
+    expect(screen.getByTestId("selection").textContent).toBe("2026-10-23");
+  });
+  it("does not realign an animation when the rail height changes",()=>{
+    let resize=()=>{};
+    vi.stubGlobal("ResizeObserver",class {constructor(callback:()=>void){resize=callback;}observe(){}disconnect(){}});
+    render(<Harness/>);layout();act(()=>resize());scroll.mockClear();scroll.mockImplementation(()=>{});
+    fireEvent.click(screen.getByText("Saturday"));
+    act(()=>{rail.scrollLeft=1000;fireEvent.scroll(rail);resize();resize();});
+    expect(scroll).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId("selection").textContent).toBe("2026-10-24");
+  });
+  it("finishes each edge slide and pauses before advancing again, even with slow animation frames",()=>{
+    render(<Harness/>);layout();scroll.mockImplementation(()=>{});drag();move(310);
+    act(()=>vi.advanceTimersByTime(550));expect(scroll).toHaveBeenCalledTimes(1);
+    for(let left=15;left<300;left+=15){
+      act(()=>{rail.scrollLeft=left;fireEvent.scroll(rail);vi.advanceTimersByTime(100);});
+      expect(scroll).toHaveBeenCalledTimes(1);
+      expect(screen.getByTestId("selection").textContent).toBe("2026-10-20");
+    }
+    act(()=>{rail.scrollLeft=300;fireEvent.scroll(rail);vi.advanceTimersByTime(250);});
+    expect(scroll).toHaveBeenCalledTimes(1);
+    act(()=>vi.advanceTimersByTime(100));expect(scroll).toHaveBeenLastCalledWith({left:600,behavior:"smooth"});
+  });
+  it("lets a manual swipe interrupt an animated selection",()=>{
+    render(<Harness/>);layout();scroll.mockImplementation(()=>{});
+    fireEvent.click(screen.getByText("Saturday"));fireEvent.touchStart(rail);
+    act(()=>{rail.scrollLeft=300;fireEvent.scroll(rail);});
+    expect(screen.getByTestId("selection").textContent).toBe("2026-10-20");
   });
   it("waits for an edge hover, advances repeatedly, and stops when leaving or cancelling",()=>{
     render(<Harness/>);layout();drag();move(310);
