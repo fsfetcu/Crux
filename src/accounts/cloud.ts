@@ -17,6 +17,11 @@ export interface PlannerCloud {
   ) => Promise<RemotePlanner>;
 }
 export class PlannerConflict extends Error {}
+export class PlannerAccessDenied extends Error {
+  constructor() {
+    super("This Google account does not have access to Crux. Ask the owner to approve it, or sign out and use another account. Your device backup has been kept.");
+  }
+}
 export function parseRemote(row: Record<string, unknown>): RemotePlanner {
   const revision = Number(row.revision);
   if (
@@ -33,17 +38,21 @@ export function parseRemote(row: Record<string, unknown>): RemotePlanner {
     updatedAt: row.updated_at,
   };
 }
-export function plannerCloud(client: SupabaseClient): PlannerCloud {
+export function plannerCloud(client: SupabaseClient, restricted = false): PlannerCloud {
   return {
     async read(userId, signal) {
-      const { data, error } = await client
+      const { data, error } = restricted ? await client
+        .rpc("load_planner", { p_user_id: userId })
+        .abortSignal(signal)
+        .maybeSingle() : await client
         .from("user_planners")
         .select("data,revision,updated_at")
         .eq("user_id", userId)
         .abortSignal(signal)
         .maybeSingle();
+      if (error?.code === "PT403") throw new PlannerAccessDenied();
       if (error) throw error;
-      return data ? parseRemote(data) : null;
+      return data ? parseRemote(data as Record<string, unknown>) : null;
     },
     async save(userId, expectedRevision, data, signal) {
       const result = await client
@@ -56,6 +65,7 @@ export function plannerCloud(client: SupabaseClient): PlannerCloud {
         .single();
       if (result.error?.code === "PT409")
         throw new PlannerConflict(result.error.message);
+      if (result.error?.code === "PT403") throw new PlannerAccessDenied();
       if (result.error) throw result.error;
       return parseRemote(result.data as Record<string, unknown>);
     },

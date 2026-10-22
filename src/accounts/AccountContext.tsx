@@ -2,13 +2,13 @@ import { createContext, useContext, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import type { Session, SupabaseClient } from "@supabase/supabase-js";
 import { Modal } from "../Modal";
-import { accountRedirect, supabase } from "./client";
+import { accountRedirect, googleAuthEnabled, initialOAuthError, supabase } from "./client";
 
-function useAccountStore(client: SupabaseClient | null) {
+function useAccountStore(client: SupabaseClient | null, googleEnabled: boolean) {
   const [session, setSession] = useState<Session | null>(null);
   const [ready, setReady] = useState(!client);
-  const [error, setError] = useState("");
-  const [showAccount, setShowAccount] = useState(false);
+  const [error, setError] = useState(initialOAuthError);
+  const [showAccount, setShowAccount] = useState(!!initialOAuthError);
   const [recovering, setRecovering] = useState(false);
   useEffect(() => {
     if (!client) return;
@@ -59,6 +59,7 @@ function useAccountStore(client: SupabaseClient | null) {
   };
   return {
     client,
+    googleEnabled,
     user: session?.user ?? null,
     ready,
     error,
@@ -81,11 +82,13 @@ export function useAccount() {
 export function AccountProvider({
   children,
   client = supabase,
+  googleEnabled = googleAuthEnabled,
 }: {
   children: ReactNode;
   client?: SupabaseClient | null;
+  googleEnabled?: boolean;
 }) {
-  const account = useAccountStore(client);
+  const account = useAccountStore(client, googleEnabled);
   return (
     <AccountContext.Provider value={account}>
       {children}

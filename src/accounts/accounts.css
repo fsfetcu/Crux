@@ -18,6 +18,26 @@
   overflow-wrap: anywhere;
   font-weight: 600;
 }
+.google-signin {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 16px;
+  border: 1px solid #747775;
+  border-radius: 12px;
+  background: #fff;
+  color: #1f1f1f;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.google-signin:hover { background: #f5f7f5; }
+.google-signin:disabled { opacity: .65; cursor: wait; }
+.existing-password { margin-top: 20px; }
 .account-sync {
   display: flex;
   align-items: center;

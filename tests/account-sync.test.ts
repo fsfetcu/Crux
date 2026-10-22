@@ -2,7 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { firstProfile, PROFILE_KEY } from "../src/profiles";
 import { initialState } from "../src/model";
-import { PlannerConflict, parseRemote } from "../src/accounts/cloud";
+import { PlannerAccessDenied, PlannerConflict, parseRemote } from "../src/accounts/cloud";
 import type { PlannerCloud, RemotePlanner } from "../src/accounts/cloud";
 import { WorkspaceStore, accountStorageKey } from "../src/accounts/workspace";
 const planner = (name = "My training") => {
@@ -44,6 +44,22 @@ const fakeCloud = (initial: RemotePlanner | null = null) => {
 };
 beforeEach(() => localStorage.clear());
 describe("private account workspaces", () => {
+  it("keeps cached edits and blocks the workspace when access is revoked, then restores it on approval",async () => {
+    const data=planner('Kept private copy');
+    cache('A',data,1,true);
+    const cloud=fakeCloud(remote('Kept private copy'));
+    vi.mocked(cloud.api.read).mockRejectedValueOnce(new PlannerAccessDenied());
+    const store=new WorkspaceStore('A',cloud.api);
+    const before=localStorage.getItem(accountStorageKey('A'));
+    await store.synchronize();
+    expect(store.snapshot()).toMatchObject({ready:false,status:'error',message:expect.stringContaining('does not have access')});
+    expect(localStorage.getItem(accountStorageKey('A'))).toBe(before);
+    expect(cloud.api.save).not.toHaveBeenCalled();
+    expect(store.persist(planner('Overwrite'))).toBe(false);
+    await store.synchronize();
+    expect(store.snapshot()).toMatchObject({ready:true,status:'saved'});
+    expect(store.snapshot().data.profiles[0].name).toBe('Kept private copy');
+  });
   it("does not copy guest data or a previous account into a new account", async () => {
     localStorage.setItem(
       PROFILE_KEY,

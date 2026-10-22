@@ -5,6 +5,7 @@ import { useProfiles } from "../ProfileContext";
 import { originalProfileBackup, parseProfileBackup } from "../profiles";
 import { accountStorageKey } from "./workspace";
 import { useAccount, accountRedirect } from "./AccountContext";
+import { GoogleSignIn } from "./GoogleSignIn";
 
 export const syncLabels = {
   device: "Device only",
@@ -23,6 +24,7 @@ export function AccountControl() {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const [existingPassword, setExistingPassword] = useState(false);
   const deviceBackup = () => {
     try {
       return originalProfileBackup();
@@ -32,6 +34,7 @@ export function AccountControl() {
   };
   const close = () => {
     account.setShowAccount(false);
+    setExistingPassword(false);
     setPassword("");
     account.setError("");
     setMessage("");
@@ -53,6 +56,8 @@ export function AccountControl() {
           title={
             account.user
               ? "Your Crux account"
+              : account.googleEnabled && !existingPassword
+                ? "Sign in to Crux"
               : mode === "signup"
                 ? "Create your Crux account"
                 : mode === "reset"
@@ -144,6 +149,15 @@ export function AccountControl() {
               Account setup is being completed. Your device-only planner still
               saves normally.
             </p>
+          ) : account.googleEnabled && !existingPassword ? (
+            <>
+              <GoogleSignIn />
+              <button className="text-button existing-password" onClick={() => {
+                setExistingPassword(true);
+                setMode("signin");
+                account.setError("");
+              }}>Use an existing password account</button>
+            </>
           ) : (
             <form
               className="form-stack"
@@ -257,6 +271,14 @@ export function AccountControl() {
                       : "Sign in"}
               </button>
               <div className="account-links">
+                {account.googleEnabled ? <>
+                  <button type="button" className="text-button" onClick={() => {
+                    setExistingPassword(false);
+                    setPassword("");
+                    account.setError("");
+                  }}>Back to Google sign-in</button>
+                  <p className="small muted">For new accounts, continue with Google. Email password-reset delivery is not configured.</p>
+                </> : <>
                 <button
                   type="button"
                   className="text-button"
@@ -297,6 +319,7 @@ export function AccountControl() {
                     Back to sign in
                   </button>
                 )}
+                </>}
               </div>
             </form>
           )}

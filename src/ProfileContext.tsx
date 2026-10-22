@@ -39,7 +39,7 @@ function useProfileStore() {
     () =>
       new WorkspaceStore(
         account.user?.id ?? null,
-        account.user && account.client ? plannerCloud(account.client) : null,
+        account.user && account.client ? plannerCloud(account.client, account.googleEnabled) : null,
       ),
   );
   const snapshot = useSyncExternalStore(

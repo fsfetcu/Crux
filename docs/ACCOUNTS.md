@@ -2,6 +2,31 @@
 
 Crux stays on GitHub Pages. Supabase handles email/password authentication and a private planner document for each account. Device-only mode remains available. Signing in opens the account's own data, never another person's guest data. Importing a device-only planner is an explicit action with the existing backup preview and Restore confirmation.
 
+## Google sign-in for a small group
+
+Google sign-in is the preferred setup for friends who already have Google accounts. It does not need a sending domain, custom SMTP or a separate Crux password. Google handles authentication and password recovery; Supabase still stores each person's private planner. Basic identity scopes are `openid`, `email` and `profile`. Crux does not request access to Gmail messages, Drive files or contacts.
+
+The Google feature is activated only when `VITE_GOOGLE_AUTH_ENABLED=true`. Keep this flag off until all backend setup below is complete. Existing email/password mode remains available while the Google connection is being configured. When enabled, the account dialog offers **Continue with Google** and a fallback for an existing password account; new email signup and password-reset links are hidden.
+
+1. In a dedicated Google Cloud project, configure Google Auth Platform with Crux as the app name and an External audience. Google requires agreement to its API Services User Data Policy. Use only the three basic identity scopes above.
+2. Create a **Web application** OAuth client. Authorized JavaScript origin: `https://fsfetcu.github.io`. Authorized redirect URI: `https://cpnobpujwvodoshkkmaj.supabase.co/auth/v1/callback`. This callback differs from the app's final redirect URL, `https://fsfetcu.github.io/Crux/`.
+3. Enter the client ID and secret privately in **Supabase → Authentication → Sign In / Providers → Google**. Keep nonce checks and email verification enabled. Never put the Google client secret into `VITE_` variables, GitHub code, training backups or chat.
+4. Apply [`202610220002_google_friends.sql`](../supabase/migrations/202610220002_google_friends.sql) after the first migration. Add the owner's and friends' actual Google email addresses **privately in Supabase**, in `crux_private.approved_users`. This table is outside the exposed API schema, has row security, and is unreadable and uneditable by app users. The public migration contains no actual member addresses. For example, with the placeholder replaced privately:
+
+   ```sql
+   insert into crux_private.approved_users(email)
+   values (lower('approved-person@example.test'))
+   on conflict(email) do update set allowed=true;
+   ```
+
+5. In **Authentication → Auth Hooks → Before User Created**, select the Postgres function `public.crux_before_user_created`. It rejects unapproved addresses and new non-Google signups. Database policies separately enforce membership on every read and write, including existing sessions. A matching, verified Google identity is required; editable user metadata cannot grant access. To revoke online access, set a person's `allowed` field to `false`. This retains their planner and cannot erase previously downloaded or offline copies.
+6. Add the same people to Google's test-user list when required by the project's audience configuration. A Google testing audience is an additional control, not a replacement for the Supabase checks. See [Google's setup guide](https://supabase.com/docs/guides/auth/social-login/auth-google) for current audience behavior.
+7. Add the GitHub Actions repository variable `VITE_GOOGLE_AUTH_ENABLED=true`, then deploy `main`. Test the redirect, first sign-in, account save, sign-out and sign-in again. Each person must consent to Google sign-in for themselves. Existing device-only data is imported only through the explicit backup preview and Restore flow.
+
+The website and source remain public on GitHub Pages. Private online account access is restricted on the backend. Device-only mode remains usable without signing in. A denied or revoked account keeps its cached records, but online access is refused and Crux asks the user to use an approved account.
+
+Google sign-in is prepared in source; owner agreement, OAuth credentials and live backend activation must be completed before it is considered operational.
+
 ## Activate a Supabase project
 
 1. Create the Crux project in your Supabase organization. Choose your database password privately. The application does not need that password.
@@ -27,4 +52,4 @@ The automated suite includes real Postgres row-security and revision tests using
 
 On 22 October 2026 the migration was applied to the Crux Supabase project, the production URL and exact redirect allow list were configured, and the public client variables were added to GitHub. Email confirmation remains enabled. The live database passed [`supabase/verify-accounts.sql`](../supabase/verify-accounts.sql): own-account reads and saves, revision conflicts, cross-account read/write denial, ownership-change denial and anonymous read/write denial. This check uses temporary user IDs without credentials inside a transaction and rolls all test data back.
 
-Public signup and password-reset delivery still require custom SMTP. Until then, the default Supabase mail service is limited to organization team addresses. A real user's email-confirmation flow has not yet been verified. No account deletion or social providers are implemented in this first version. An expired session may need an online sign-in before online saving resumes.
+Email/password signup and password-reset delivery require custom SMTP. Until then, the default Supabase mail service is limited to organization team addresses. The Google flow avoids that email delivery dependency once activated. A real user's email-confirmation flow has not yet been verified. Account deletion is not implemented. An expired session may need an online sign-in before online saving resumes.

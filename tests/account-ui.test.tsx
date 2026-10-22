@@ -44,6 +44,7 @@ function fakeClient() {
         return { data: { session }, error: null };
       }),
       signUp: vi.fn(async () => ({ data: { session: null }, error: null })),
+      signInWithOAuth: vi.fn(async () => ({ data: { url: "https://example.test/authorize" }, error: null })),
       resetPasswordForEmail: vi.fn(async () => ({ error: null })),
       updateUser: vi.fn(async () => ({ error: null })),
       signOut: vi.fn(async () => {
@@ -114,9 +115,9 @@ afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
 });
-const mount = (fake: ReturnType<typeof fakeClient>) =>
+const mount = (fake: ReturnType<typeof fakeClient>, googleEnabled = false) =>
   render(
-    <AccountProvider client={fake.client}>
+    <AccountProvider client={fake.client} googleEnabled={googleEnabled}>
       <AccountWorkspace />
     </AccountProvider>,
   );
@@ -137,6 +138,31 @@ const login = async (
   await screen.findByRole("button", { name: "Manage account" });
 };
 describe("account UI and workspace switching", () => {
+  it("offers Google sign-in without sending email or uploading guest data", async () => {
+    const fake = fakeClient();
+    const user = userEvent.setup();
+    mount(fake, true);
+    await user.click(await screen.findByRole('button',{name:'Sign in or create account'}));
+    expect(screen.queryByLabelText('Password')).toBeNull();
+    await user.click(screen.getByRole('button',{name:'Continue with Google'}));
+    expect(fake.api.auth.signInWithOAuth).toHaveBeenCalledWith({provider:'google',options:{redirectTo:expect.any(String),queryParams:{prompt:'select_account'}}});
+    expect(fake.api.auth.signUp).not.toHaveBeenCalled();
+    expect(fake.api.auth.resetPasswordForEmail).not.toHaveBeenCalled();
+    expect(screen.getByRole('button',{name:'Opening Google…'}).getAttribute('disabled')).not.toBeNull();
+  });
+  it("can retry when Google sign-in fails to start", async () => {
+    const fake = fakeClient();
+    fake.api.auth.signInWithOAuth.mockRejectedValueOnce(Error('offline'));
+    const user = userEvent.setup(); mount(fake,true);
+    await user.click(await screen.findByRole('button',{name:'Sign in or create account'}));
+    await user.click(screen.getByRole('button',{name:'Continue with Google'}));
+    expect(await screen.findByRole('alert')).toHaveProperty('textContent',expect.stringContaining('Could not start Google sign-in'));
+    expect(screen.getByRole('button',{name:'Continue with Google'}).getAttribute('disabled')).toBeNull();
+    await user.click(screen.getByRole('button',{name:'Use an existing password account'}));
+    expect(screen.getByLabelText('Password')).toBeTruthy();
+    expect(screen.queryByRole('button',{name:'Forgot password?'})).toBeNull();
+    expect(screen.queryByRole('button',{name:'Create an account'})).toBeNull();
+  });
   it("loads the correct account and keeps its history separate from guest and another account", async () => {
     localStorage.setItem(
       PROFILE_KEY,

@@ -8,7 +8,7 @@ A complete mobile-first React + TypeScript app for flexible, recovery-based trai
 
 ## Accounts and online saving
 
-The account feature includes email signup and sign-in, email confirmation, password recovery, private account workspaces, offline saving and revision-based conflict review. It requires a configured Supabase project. See [account setup and validation](docs/ACCOUNTS.md) for the migration, email delivery and GitHub build variables. Device-only plans are copied into an account only when you choose to restore them.
+The account feature includes private account workspaces, offline saving and revision-based conflict review. Google sign-in and a private friends-only email access list are available after provider configuration; they avoid the need for a custom email delivery service. The existing email/password setup is also supported. See [account setup and validation](docs/ACCOUNTS.md) for Google setup, migrations and GitHub build variables. Device-only plans are copied into an account only when you choose to restore them.
 
 ## Run locally
 
@@ -27,7 +27,7 @@ npm run build # TypeScript validation and optimized production output
 npm run preview # serve the production build locally
 ```
 
-Deploy `dist/` on any static HTTPS host. Routes are internal UI sections, so no server routing configuration is needed. Root hosting works by default. For a project subdirectory, build with `APP_BASE_PATH=/Crux/ npm run build`; asset paths, the manifest and the offline worker all stay within that path.
+Deploy `dist/` on any static HTTPS host. Routes are internal UI sections, so no server routing configuration is needed. Root hosting works by default. For a project subdirectory, build with `APP_BASE_PATH=/Crux/ npm run build`; asset paths, the manifest and the offline worker all stay within that path. Preview that build with `APP_BASE_PATH=/Crux/ npm run preview` so the server uses the same asset paths.
 
 ## GitHub and GitHub Pages
 
@@ -114,7 +114,7 @@ The app intentionally starts with **no invented training history or check-ins**.
 
 ## Verification
 
-129 automated tests pass, covering recommendations, profiles, logging, day-specific exercise edits, backups, planning, offline behavior, account switching, sync conflicts and database row security. The worker tests run at both `/` and `/crux-planner/`, including scoped asset caching, failed updates, sign-in-page rejection and retaining another project's cache. TypeScript and the production build pass.
+142 automated tests pass, covering recommendations, profiles, logging, day-specific exercise edits, backups, planning, offline behavior, account switching, sync conflicts, Google sign-in and private membership enforcement. The worker tests run at both `/` and `/crux-planner/`, including scoped asset caching, failed updates, sign-in-page rejection and retaining another project's cache. TypeScript and the production build pass.
 
 The GitHub-ready production build was checked in a real browser at `/crux-planner/`. The icon loaded from that path, the manifest referenced that path, and the interface fit a 390-pixel phone viewport without horizontal overflow. Saved a daily check-in and a bench-press plan with 4 × 8 and 2 min rest, closed the tab, stopped the preview server (HTTP 000), and reopened the cached app. Both the check-in and the exact exercise values remained available offline.
 

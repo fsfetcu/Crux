@@ -7,7 +7,7 @@ import {
 } from "../profiles";
 import type { ProfileData } from "../profiles";
 import { initialState } from "../model";
-import { PlannerConflict } from "./cloud";
+import { PlannerAccessDenied, PlannerConflict } from "./cloud";
 import type { PlannerCloud, RemotePlanner } from "./cloud";
 
 export const accountStorageKey = (userId: string) =>
@@ -284,11 +284,21 @@ export class WorkspaceStore {
       });
     } catch (error) {
       if (!active()) return;
-      if (error instanceof PlannerConflict) {
+      if (error instanceof PlannerAccessDenied) {
+        this.emit({ ready: false, status: "error", message: error.message });
+      } else if (error instanceof PlannerConflict) {
+        let denied = false;
         const remote = await this.cloud
           .read(this.userId, request.signal)
-          .catch(() => null);
+          .catch((failure: unknown) => {
+            if (failure instanceof PlannerAccessDenied) {
+              denied = true;
+              this.emit({ ready: false, status: "error", message: failure.message });
+            }
+            return null;
+          });
         if (!active()) return;
+        if (denied) return;
         if (remote) {
           this.write(this.cache);
           this.emit({ ready: true, status: "conflict", conflict: remote });
