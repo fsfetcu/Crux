@@ -1,4 +1,6 @@
 import { ProfileProvider, useProfiles, useTypeLabels } from "./ProfileContext";
+import { AccountProvider, useAccount } from "./accounts/AccountContext";
+import { AccountControl, syncLabels } from "./accounts/AccountControl";
 import { WorkoutTypesEditor } from "./WorkoutTypesEditor";
 import { Modal } from "./Modal";
 import { useEffect, useRef, useState } from "react";
@@ -91,7 +93,6 @@ import {
   DraggablePlannedSession,
 } from "./PlannerDnD";
 import { download } from "./storage";
-import { originalProfileBackup } from "./profiles";
 const icons: Record<Category, typeof Flame> = {
   hard: Mountain,
   volume: Activity,
@@ -1435,7 +1436,21 @@ function LibraryCard({
 }
 export default function App() {
   return (
-    <ProfileProvider>
+    <AccountProvider>
+      <AccountWorkspace />
+    </AccountProvider>
+  );
+}
+export function AccountWorkspace() {
+  const account = useAccount();
+  if (!account.ready)
+    return (
+      <div className="account-loading" role="status">
+        Restoring your sign-in…
+      </div>
+    );
+  return (
+    <ProfileProvider key={account.user?.id ?? "device-only"}>
       <ActiveTrainingApp />
     </ProfileProvider>
   );
@@ -1445,6 +1460,7 @@ function ActiveTrainingApp() {
   return <TrainingApp key={active.id} />;
 }
 function TrainingApp() {
+  const account = useAccount();
   const profiles = useProfiles();
   const state = profiles.active.state;
   const storageReady = profiles.storageReady;
@@ -1757,7 +1773,9 @@ function TrainingApp() {
                   ? "Storage needs attention"
                   : !online
                     ? "Offline · saved on this device"
-                    : "Saved on this device"}
+                    : account.user
+                      ? syncLabels[profiles.syncStatus]
+                      : "Saved on this device"}
               </span>
               <ShieldCheck size={14} />
             </div>
@@ -1811,18 +1829,60 @@ function TrainingApp() {
                 <span>{profiles.active.name}</span>
                 <ChevronRight size={13} />
               </button>
+              <AccountControl />
             </div>
           </header>
           <div className="main-content">
+            {account.user && (profiles.syncMessage || profiles.conflict) && (
+              <section className="cloud-notice" role="status">
+                <strong>
+                  {profiles.conflict
+                    ? "Another device has newer changes."
+                    : syncLabels[profiles.syncStatus]}
+                </strong>
+                <p>
+                  {profiles.conflict
+                    ? "Both copies are kept. Download your device copy, then choose which planner to continue with. This does not merge the copies."
+                    : profiles.syncMessage}
+                </p>
+                {profiles.conflict ? (
+                  <div className="backup-actions">
+                    <button
+                      className="button secondary"
+                      onClick={profiles.exportBackup}
+                    >
+                      Download device copy
+                    </button>
+                    <button
+                      className="button secondary"
+                      onClick={() => profiles.resolveConflict("online")}
+                    >
+                      Use online copy
+                    </button>
+                    <button
+                      className="button secondary"
+                      onClick={() => profiles.resolveConflict("device")}
+                    >
+                      Keep this device’s copy online
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    className="text-button"
+                    onClick={() => void profiles.syncNow()}
+                  >
+                    Retry online saving
+                  </button>
+                )}
+              </section>
+            )}
             {!storageReady && (
               <div role="alert" className="storage-alert">
                 <strong>Your saved data needs recovery.</strong>
                 <p>{profiles.error}</p>
                 <button
                   className="button secondary"
-                  onClick={() =>
-                    download(originalProfileBackup(), "crux-recovery.json")
-                  }
+                  onClick={profiles.exportRecovery}
                 >
                   Export original file
                 </button>
@@ -2606,15 +2666,19 @@ function TrainingApp() {
                 </div>
                 <section className="panel settings-panel">
                   <div className="section-header">
-                    <h2>Your data, on your device</h2>
+                    <h2>
+                      {account.user
+                        ? "Your private account data"
+                        : "Your data, on your device"}
+                    </h2>
                     <ShieldCheck size={19} />
                   </div>
                   <p className="muted">
-                    Your check-ins, plans, and history are stored in this
-                    browser. There is no app account or cloud sync. Export a
-                    backup regularly, and import it to move to another device.
-                    Exports include all profiles; restoring replaces all
-                    profiles.
+                    {account.user
+                      ? "Your planner saves to your account and keeps an offline copy on this device. Other users cannot read it. Sign in on another device to load your saved profiles. "
+                      : "Your check-ins, plans and history are saved in this browser. Sign in to keep a separate planner online and use it across devices. "}
+                    Exports include all profiles in this planner; restoring
+                    replaces those profiles. Keep a backup before importing.
                   </p>
                   <div className="backup-actions">
                     <button

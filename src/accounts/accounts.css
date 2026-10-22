@@ -1,0 +1,72 @@
+.account-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 40px;
+  padding: 8px 11px;
+  border: 1px solid #dce3d6;
+  border-radius: 13px;
+  background: #fff;
+  color: #3d573b;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.account-email {
+  overflow-wrap: anywhere;
+  font-weight: 600;
+}
+.account-sync {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #526d49;
+}
+.account-message {
+  padding: 12px;
+  border-radius: 12px;
+  background: #eef4e8;
+  color: #385334;
+  line-height: 1.6;
+}
+.account-links {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.account-loading {
+  max-width: 550px;
+  margin: 15vh auto;
+  padding: 28px;
+  color: #385334;
+}
+.cloud-notice {
+  border: 1px solid #d8ddc6;
+  border-radius: 16px;
+  background: #f5f6ec;
+  padding: 18px;
+  margin-bottom: 24px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.cloud-notice p {
+  margin: 6px 0 12px;
+}
+@media (max-width: 600px) {
+  .account-button {
+    width: 40px;
+    padding: 0;
+  }
+  .account-button > span {
+    display: none;
+  }
+  .topbar-right {
+    min-width: 0;
+    gap: 8px;
+  }
+  .topbar-right .active-profile-pill {
+    max-width: 53vw;
+  }
+}

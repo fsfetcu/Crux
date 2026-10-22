@@ -2,7 +2,6 @@ name: Test, build and optionally publish Crux
 
 on:
   push:
-    branches: [main]
   pull_request:
   workflow_dispatch:
 
@@ -27,6 +26,8 @@ jobs:
       - run: npm run build
         env:
           APP_BASE_PATH: ${{ github.event.repository.name == format('{0}.github.io', github.repository_owner) && '/' || format('/{0}/', github.event.repository.name) }}
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
       - name: Upload Pages artifact
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.DEPLOY_GITHUB_PAGES == 'true'
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5

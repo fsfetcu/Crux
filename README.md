@@ -4,7 +4,11 @@ Vibe coded with Codex: a personal training app built around recovery, flexibilit
 
 [Open Crux](https://fsfetcu.github.io/Crux/) · [Source on GitHub](https://github.com/fsfetcu/Crux)
 
-A complete mobile-first React + TypeScript app for flexible, recovery-based training, with installable PWA support, offline use, custom profiles, draggable exercises and day-specific exercise values. No app account, API keys, database server, or backend is needed. All personal training data stays in your browser's local storage. The standalone app has no login; hosting access controls are a separate choice.
+A complete mobile-first React + TypeScript app for flexible, recovery-based training, with installable PWA support, offline use, custom profiles, draggable exercises and day-specific exercise values. Device-only mode needs no backend. Optional Supabase accounts keep a separate private planner online for each person, with an offline device copy and sign-in across devices. Authentication tokens are kept out of training backups.
+
+## Accounts and online saving
+
+The account feature includes email signup and sign-in, email confirmation, password recovery, private account workspaces, offline saving and revision-based conflict review. It requires a configured Supabase project. See [account setup and validation](docs/ACCOUNTS.md) for the migration, email delivery and GitHub build variables. Device-only plans are copied into an account only when you choose to restore them.
 
 ## Run locally
 
@@ -42,7 +46,7 @@ Personal-account GitHub Pages websites are public, including Pages built from pr
 
 ### Move existing training data
 
-Before switching addresses, use **Settings & library → Export JSON** in the existing app. On the new address, choose **Import JSON**, review the backup and click **Restore**. Profiles, library changes, plans, exercise overrides, check-ins and logs travel in the backup. Browser storage cannot move automatically between the old host and `github.io`. Keep the backup until you have verified the new app. Each browser/device still has its own data; this app does not add cloud synchronization.
+Before switching addresses, use **Settings & library → Export JSON** in the existing app. On the new address, choose **Import JSON**, review the backup and click **Restore**. Profiles, library changes, plans, exercise overrides, check-ins and logs travel in the backup. Browser storage cannot move automatically between the old host and `github.io`. Keep the backup until you have verified the new app. Device-only planners remain specific to the browser. Configured accounts synchronize their own planner across devices after sign-in.
 
 ## Everyday use
 
@@ -81,15 +85,15 @@ These are training guidelines, not medical diagnoses or rigid injury-prevention 
 
 ## Data and backups
 
-The key `crux-planner-profiles-v2` stores a versioned document containing all training profiles and the active profile ID in localStorage. Existing `crux-planner-v1` data migrates automatically into the original climbing profile; the original document stays untouched as a recovery copy. This is appropriate for a personal text-based history and is synchronous, persistent and usable offline. Browser storage is specific to a browser profile, device **and URL origin**. Private browsing or clearing website data may remove it. Localhost and the published site have separate data.
+The key `crux-planner-profiles-v2` stores a versioned document containing all training profiles and the active profile ID in localStorage. Existing `crux-planner-v1` data migrates automatically into the original climbing profile; the original document stays untouched as a recovery copy. This is appropriate for a personal text-based history and is synchronous, persistent and usable offline. Device-only browser storage is specific to a browser profile, device **and URL origin**. Signed-in workspaces use separate per-account device caches and a private Supabase document. Private browsing or clearing website data may remove it. Localhost and the published site have separate data.
 
-Export from **Settings → Export JSON** regularly. Export includes every profile. Import accepts both legacy single-plan and multi-profile backups, validates the entire document, previews its profile/session/week counts, and requires an explicit Restore click before replacing all current profiles. Download your current backup first if needed. A failed import does not change anything. Storage failure is surfaced without pretending a change was saved. Corrupt existing data is retained and can be exported for recovery. Sessions are never sent to a server.
+Export from **Settings → Export JSON** regularly. Export includes every profile. Import accepts both legacy single-plan and multi-profile backups, validates the entire document, previews its profile/session/week counts, and requires an explicit Restore click before replacing all current profiles. Download your current backup first if needed. A failed import does not change anything. Storage failure is surfaced without pretending a change was saved. Corrupt existing data is retained and can be exported for recovery. Device-only sessions stay on the device. When signed in, profiles and training records synchronize to that account in Supabase; database row security restricts access to the matching authenticated user.
 
 Historical weeks snapshot their weekly targets. New settings apply to the current week and future weeks. Changing the week start regroups current calendar totals while retaining original archives and actual workout dates. Tracking-period dates are descriptive and do not lock logging outside the season.
 
 ## Install on a phone or desktop
 
-On iPhone, open the HTTPS site in Safari, use **Share → Add to Home Screen**, then open Crux from its icon. On desktop, use the browser's **Install app** option. The manifest, app icons, and production service worker are included. Load once online before using offline; the shell and built assets are cached. System fonts are available when offline. The local data store has no cloud sync. An owner-private hosting gateway may require an initial online sign-in; that is separate from the application's local data.
+On iPhone, open the HTTPS site in Safari, use **Share → Add to Home Screen**, then open Crux from its icon. On desktop, use the browser's **Install app** option. The manifest, app icons, and production service worker are included. Load once online before using offline; the shell and built assets are cached. System fonts are available when offline. Device-only mode stays local; signed-in accounts synchronize when online.
 
 ## Structure
 
@@ -110,7 +114,7 @@ The app intentionally starts with **no invented training history or check-ins**.
 
 ## Verification
 
-106 automated tests pass, covering recommendations, profiles, logging, day-specific exercise edits, backups, planning and offline behavior. The worker tests run at both `/` and `/crux-planner/`, including scoped asset caching, failed updates, sign-in-page rejection and retaining another project's cache. TypeScript and the production build pass.
+129 automated tests pass, covering recommendations, profiles, logging, day-specific exercise edits, backups, planning, offline behavior, account switching, sync conflicts and database row security. The worker tests run at both `/` and `/crux-planner/`, including scoped asset caching, failed updates, sign-in-page rejection and retaining another project's cache. TypeScript and the production build pass.
 
 The GitHub-ready production build was checked in a real browser at `/crux-planner/`. The icon loaded from that path, the manifest referenced that path, and the interface fit a 390-pixel phone viewport without horizontal overflow. Saved a daily check-in and a bench-press plan with 4 × 8 and 2 min rest, closed the tab, stopped the preview server (HTTP 000), and reopened the cached app. Both the check-in and the exact exercise values remained available offline.
 

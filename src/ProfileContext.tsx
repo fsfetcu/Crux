@@ -1,4 +1,11 @@
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import type { ReactNode } from "react";
 import { Download, Plus, Users } from "lucide-react";
 import { Modal } from "./Modal";
@@ -6,15 +13,14 @@ import { dayKey, ensureWeek, labelsFor } from "./model";
 import type { State } from "./model";
 import { download } from "./storage";
 import {
-  PROFILE_KEY,
   createProfile,
-  loadProfiles,
-  originalProfileBackup,
   parseProfileBackup,
   replaceProfileState,
-  saveProfiles,
 } from "./profiles";
 import type { ProfileData } from "./profiles";
+import { useAccount } from "./accounts/AccountContext";
+import { plannerCloud } from "./accounts/cloud";
+import { WorkspaceStore } from "./accounts/workspace";
 const ProfileContext = createContext<ReturnType<typeof useProfileStore> | null>(
   null,
 );
@@ -28,61 +34,53 @@ export function useTypeLabels() {
   return value ? labelsFor(value.active.state) : labelsFor({} as State);
 }
 function useProfileStore() {
-  const [loaded] = useState(loadProfiles);
-  const [data, setData] = useState(loaded.data);
+  const account = useAccount();
+  const [workspace] = useState(
+    () =>
+      new WorkspaceStore(
+        account.user?.id ?? null,
+        account.user && account.client ? plannerCloud(account.client) : null,
+      ),
+  );
+  const snapshot = useSyncExternalStore(
+    workspace.subscribe,
+    workspace.snapshot,
+  );
+  const { data, error } = snapshot;
   const current = useRef(data);
   current.current = data;
-  const [error, setError] = useState(loaded.error);
   const [showProfiles, setShowProfiles] = useState(false);
   const [incoming, setIncoming] = useState<ProfileData | null>(null);
   const [notice, setNotice] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
   const persist = (next: ProfileData, recover = false) => {
-    if (error && !recover) {
-      setNotice("Recover or import your saved data before making changes.");
-      return false;
-    }
-    try {
-      saveProfiles(next);
-      current.current = next;
-      setData(next);
-      setError("");
-      return true;
-    } catch {
+    const saved = workspace.persist(next, recover);
+    if (saved) current.current = workspace.snapshot().data;
+    else
       setNotice(
-        "Could not save on this device. Export a backup; storage may be full or disabled.",
+        error ||
+          workspace.snapshot().message ||
+          "Could not save your change. Export a backup and try again.",
       );
-      return false;
-    }
+    return saved;
   };
   useEffect(() => {
-    if (!loaded.error) {
-      try {
-        saveProfiles(current.current);
-      } catch {
-        setError(
-          "Device storage is unavailable. Your existing data has been kept.",
-        );
-      }
-    }
-  }, []);
-  useEffect(() => {
-    const sync = (e: StorageEvent) => {
-      if (e.key !== PROFILE_KEY || !e.newValue) return;
-      try {
-        const next = parseProfileBackup(e.newValue);
-        current.current = next;
-        setData(next);
-        setError("");
-      } catch {
-        setError(
-          "A change in another tab could not be read. Your saved data has been kept.",
-        );
-      }
+    workspace.start();
+    const sync = () => {
+      void workspace.synchronize();
     };
-    window.addEventListener("storage", sync);
-    return () => window.removeEventListener("storage", sync);
-  }, []);
+    window.addEventListener("storage", workspace.onStorage);
+    window.addEventListener("online", sync);
+    window.addEventListener("focus", sync);
+    const interval = account.user ? setInterval(sync, 30000) : null;
+    return () => {
+      workspace.dispose();
+      window.removeEventListener("storage", workspace.onStorage);
+      window.removeEventListener("online", sync);
+      window.removeEventListener("focus", sync);
+      if (interval) clearInterval(interval);
+    };
+  }, [workspace]);
   useEffect(() => {
     if (notice) {
       const t = setTimeout(() => setNotice(""), 6000);
@@ -98,9 +96,7 @@ function useProfileStore() {
   };
   const exportBackup = () =>
     download(
-      error
-        ? originalProfileBackup()
-        : JSON.stringify(current.current, null, 2),
+      error ? workspace.raw() : JSON.stringify(current.current, null, 2),
       `crux-all-profiles-${dayKey()}.json`,
     );
   const importFile = async (file: File | undefined) => {
@@ -123,7 +119,15 @@ function useProfileStore() {
     data,
     active,
     error,
-    storageReady: !error,
+    storageReady: !error && snapshot.ready,
+    ready: snapshot.ready,
+    syncStatus: snapshot.status,
+    syncMessage: snapshot.message,
+    syncNow: workspace.synchronize,
+    conflict: snapshot.conflict,
+    resolveConflict: workspace.resolveConflict,
+    exportRecovery: () =>
+      download(workspace.raw(), `crux-recovery-${dayKey()}.json`),
     commit,
     switchProfile,
     exportBackup,
@@ -141,13 +145,30 @@ function useProfileStore() {
 }
 export function ProfileProvider({ children }: { children: ReactNode }) {
   const store = useProfileStore();
+  const account = useAccount();
   const [creationName, setCreationName] = useState("");
   const [copy, setCopy] = useState(false);
   const [creating, setCreating] = useState(false);
   const rename = useRef<HTMLInputElement>(null);
   return (
     <ProfileContext.Provider value={store}>
-      {children}
+      {store.ready ? (
+        children
+      ) : (
+        <div className="account-loading form-stack" role="status">
+          <h1>Your training, on every device.</h1>
+          <p>{store.syncMessage || "Loading your private planner…"}</p>
+          <button className="button" onClick={() => void store.syncNow()}>
+            Try again
+          </button>
+          <button
+            className="text-button"
+            onClick={() => void account.signOut()}
+          >
+            Sign out
+          </button>
+        </div>
+      )}
       <input
         hidden
         ref={store.fileRef}
@@ -313,7 +334,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
               (n, p) => n + Object.keys(p.state.weeks).length,
               0,
             )}{" "}
-            saved weeks. Restoring replaces all profiles in this browser.
+            saved weeks. Restoring replaces all profiles in the current planner.
           </p>
           <button className="text-button" onClick={store.exportBackup}>
             <Download size={15} />
