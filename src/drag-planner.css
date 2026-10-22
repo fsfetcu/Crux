@@ -509,8 +509,10 @@
   display: flex;
   flex-wrap: wrap;
   gap: 7px;
-  margin: 0 0 16px;
+  margin: 0;
+  min-width: 0;
 }
+.shelf-categories-row { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 7px; margin-bottom: 16px; }
 .activity-category {
   border: 1px solid #d8e1cf;
   background: #f7f9f2;
@@ -520,7 +522,14 @@
   font-size: 11px;
   color: #75816c;
   cursor: pointer;
+  min-height: 40px;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
+.shelf-add-type { display: inline-flex; align-items: center; gap: 6px; border-style: dashed; color: #425b3e; }
+.shelf-add-type:hover, .shelf-add-workout:hover { background: #e3eadb; border-color: #7a9369; }
+.shelf-add-workout { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; margin-top: 12px; padding: 10px 17px; border: 1px dashed #adbea0; border-radius: 18px; background: #f6f8f0; color: #526b47; font: inherit; font-size: 12px; cursor: pointer; }
+.shelf-empty { padding: 10px 0 0; color: #718267; font-size: 12px; line-height: 1.6; }
 .activity-category.selected {
   background: #425b3e;
   color: #fff;
@@ -529,6 +538,7 @@
 }
 .category-activities {
   min-height: 70px;
+  overflow-wrap: anywhere;
 }
 .routine-activities + .routine-activities {
   border-top: 1px solid #dce3d3;
@@ -727,6 +737,7 @@
   .activity-category {
     padding: 9px 12px;
     font-size: 11px;
+    min-height: 44px;
   }
   .routine-activities .workout-shelf {
     grid-template-columns: 1fr 1fr;

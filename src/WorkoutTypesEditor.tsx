@@ -6,19 +6,38 @@ export function WorkoutTypesEditor({
   state,
   onSave,
   notify,
+  createOnly = false,
+  onCreated,
 }: {
   state: State;
   onSave: (state: State) => boolean;
   notify: (message: string) => void;
+  createOnly?: boolean;
+  onCreated?: (id: string) => void;
 }) {
-  const [adding, setAdding] = useState(false);
-  const [newId, setNewId] = useState("");
+  const [adding, setAdding] = useState(createOnly);
+  const [newId, setNewId] = useState(() => "type-" + uid());
+  const [error, setError] = useState("");
   const save = (type: WorkoutType, target: number) => {
+    setError("");
     const types = workoutTypes(state),
       existing = types.some((t) => t.id === type.id);
-    if (!type.name.trim()) return;
+    if (!type.name.trim()) {
+      setError("Enter a name for this workout type.");
+      return;
+    }
+    if ([...types, { id: "rest", name: "Rest & mobility" }].some((t) =>
+      t.id !== type.id && t.name.trim().toLowerCase() === type.name.trim().toLowerCase(),
+    )) {
+      setError("A workout type with this name already exists. Choose another name.");
+      return;
+    }
     if (types.length >= 100 && !existing) {
-      notify("This profile supports up to 100 workout types.");
+      setError("This profile supports up to 100 workout types.");
+      return;
+    }
+    if (!Number.isInteger(target) || target < 0 || target > 14) {
+      setError("Choose a weekly target from 0 to 14.");
       return;
     }
     const goals = { ...state.settings.goals, [type.id]: target };
@@ -37,7 +56,10 @@ export function WorkoutTypesEditor({
           )
         : [...types, { ...type, name: type.name.trim() }],
       settings: { ...state.settings, goals },
-      weeks: { ...state.weeks, [start]: { ...week, goals } },
+      weeks: {
+        ...state.weeks,
+        [start]: { ...week, goals: { ...week.goals, [type.id]: target } },
+      },
     };
     if (onSave(next)) {
       setAdding(false);
@@ -46,6 +68,9 @@ export function WorkoutTypesEditor({
           ? "Workout type updated. Your logged history is preserved."
           : "Workout type added. Add a workout with its own intensity and loading tags.",
       );
+      if (!existing) onCreated?.(type.id);
+    } else {
+      setError("The workout type could not be saved. Please try again.");
     }
   };
   const row = (type: WorkoutType, isNew = false) => (
@@ -87,6 +112,13 @@ export function WorkoutTypesEditor({
       </button>
     </form>
   );
+  if (createOnly) return (
+    <div>
+      <p className="muted">Create a group such as Running, Yoga or another climbing style. Its workouts share one weekly target.</p>
+      {row({ id: newId, name: "" }, true)}
+      {error && <p role="alert" className="warning">{error}</p>}
+    </div>
+  );
   return (
     <section className="panel settings-panel workout-types">
       <div className="section-header">
@@ -99,6 +131,7 @@ export function WorkoutTypesEditor({
         tags.
       </p>
       {workoutTypes(state).map((type) => row(type))}
+      {error && <p role="alert" className="warning">{error}</p>}
       {adding ? (
         row({ id: newId, name: "" }, true)
       ) : (

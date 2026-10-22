@@ -1469,6 +1469,8 @@ function TrainingApp() {
   const categoryLabels = useTypeLabels();
   const goalKeys = Object.keys(state.settings.goals);
   const [newWorkout, setNewWorkout] = useState<SessionTemplate | null>(null);
+  const [showNewType, setShowNewType] = useState(false);
+  const [shelfCategory, setShelfCategory] = useState<Category | null>(null);
   const recoveryLogs = profiles.data.profiles.flatMap((p) => p.state.logs);
   const { online, offlineReady } = useAppStatus();
   const navToggleRef = useRef<HTMLButtonElement>(null);
@@ -1509,6 +1511,29 @@ function TrainingApp() {
     total = goalKeys.reduce((a, k) => a + goals[k], 0);
   const notify = (m: string) => setToast(m);
   const commit = (next: State) => profiles.commit(next);
+  const addWorkout = (category = workoutTypes(state)[0]?.id) => {
+    if (!category) {
+      setShowNewType(true);
+      return;
+    }
+    setNewWorkout({
+      id: uid(),
+      name: "",
+      category,
+      location: "",
+      description: "",
+      exercises: [],
+      intensity: category === "hard" ? "hard" : category === "chill" ? "easy" : category === "rest" ? "rest" : "moderate",
+      loading: ["hard", "volume", "chill"].includes(category) ? ["fingers"] : category === "strength" ? ["upper", "lower"] : [],
+    });
+  };
+  const shelfActions = {
+    types: workoutTypes(state),
+    category: shelfCategory,
+    onCategoryChange: setShelfCategory,
+    onAddType: () => setShowNewType(true),
+    onAddWorkout: addWorkout,
+  };
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 30000);
     return () => clearInterval(t);
@@ -2016,6 +2041,7 @@ function TrainingApp() {
                 </div>
                 <Progress state={state} start={currentStart} />
                 <SessionShelf
+                  {...shelfActions}
                   templates={state.templates}
                   onChoose={(templateId, exercises) =>
                     setPlan({ templateId, date: today, exercises })
@@ -2144,6 +2170,7 @@ function TrainingApp() {
                   }
                 />
                 <SessionShelf
+                  {...shelfActions}
                   templates={state.templates}
                   onChoose={(templateId, exercises) =>
                     setPlan({
@@ -2615,22 +2642,7 @@ function TrainingApp() {
                   </div>
                   <button
                     className="button"
-                    onClick={() => {
-                      if (!workoutTypes(state).length) {
-                        notify("Add a workout type below first.");
-                        return;
-                      }
-                      setNewWorkout({
-                        id: uid(),
-                        name: "",
-                        category: workoutTypes(state)[0].id,
-                        location: "",
-                        description: "",
-                        exercises: [],
-                        intensity: "moderate",
-                        loading: [],
-                      });
-                    }}
+                    onClick={() => addWorkout()}
                   >
                     <Plus size={16} />
                     Add workout
@@ -2859,6 +2871,14 @@ function TrainingApp() {
             </div>
           </Modal>
         )}
+        {showNewType && (
+          <Modal title="Add a workout type" onClose={() => setShowNewType(false)}>
+            <WorkoutTypesEditor
+              state={state} onSave={commit} notify={notify} createOnly
+              onCreated={(id) => { setShelfCategory(id); setShowNewType(false); }}
+            />
+          </Modal>
+        )}
         {newWorkout && (
           <Modal title="Add a workout" onClose={() => setNewWorkout(null)} wide>
             <LibraryCard
@@ -2866,6 +2886,7 @@ function TrainingApp() {
               isNew
               onSave={(t) => {
                 if (commit({ ...state, templates: [...state.templates, t] })) {
+                  setShelfCategory(t.category);
                   setNewWorkout(null);
                   notify("Workout added. Recommendations now use its tags.");
                 }

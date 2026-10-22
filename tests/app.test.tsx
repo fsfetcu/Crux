@@ -328,6 +328,84 @@ describe("working application flows", () => {
   });
 });
 
+describe("adding workout types and activities from the calendar shelf", () => {
+  it("creates a type, keeps its empty tab after reopening, then adds and plans a tagged workout", async () => {
+    const user = userEvent.setup();
+    const state = initialState();
+    const start = weekStart(dayKey());
+    const previous = addDays(start, -7);
+    state.weeks[start] = { start, startDay: 1, goals: { ...state.settings.goals, hard: 3 }, notes: "Keep this week's adjustment" };
+    state.weeks[previous] = { start: previous, startDay: 1, goals: { ...state.settings.goals, volume: 2 }, notes: "Archived week" };
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(firstProfile(state)));
+    let view = render(<App />);
+    await user.click(screen.getByRole('button', { name: 'Add workout type' }));
+    let dialog = screen.getByRole('dialog', { name: 'Add a workout type' });
+    await user.type(within(dialog).getByLabelText('New workout type'), 'Cycling');
+    await user.clear(within(dialog).getByLabelText('Weekly target'));
+    await user.type(within(dialog).getByLabelText('Weekly target'), '2');
+    await user.click(within(dialog).getByRole('button', { name: 'Create type' }));
+    const type = stored().types!.find(t => t.name === 'Cycling')!;
+    expect(screen.getByRole('tab', { name: 'Cycling' }).getAttribute('aria-selected')).toBe('true');
+    expect(stored().settings.goals[type.id]).toBe(2);
+    expect(stored().weeks[start].goals).toEqual({ ...state.weeks[start].goals, [type.id]: 2 });
+    expect(stored().weeks[previous]).toEqual(state.weeks[previous]);
+    view.unmount();
+    view = render(<App />);
+    await user.click(screen.getByRole('tab', { name: 'Cycling' }));
+    expect(screen.getByText(/Add your first Cycling workout/)).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Add workout to Cycling' }));
+    dialog = screen.getByRole('dialog', { name: 'Add a workout' });
+    expect((within(dialog).getByLabelText('Workout type') as HTMLSelectElement).value).toBe(type.id);
+    await user.type(within(dialog).getByLabelText('Session name'), 'Hill ride');
+    await user.selectOptions(within(dialog).getByLabelText('Intensity'), 'hard');
+    await user.click(within(dialog).getByLabelText('Lower body'));
+    await user.click(within(dialog).getByLabelText('Cardio'));
+    await user.click(within(dialog).getByRole('button', { name: 'Save session' }));
+    const workout = stored().templates.find(t => t.name === 'Hill ride')!;
+    expect(workout).toMatchObject({ category: type.id, intensity: 'hard', loading: ['lower', 'cardio'] });
+    await user.click(screen.getByRole('button', { name: 'Drag Hill ride into calendar' }));
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Add to planner' }));
+    expect(stored().plans.some(p => p.templateId === workout.id)).toBe(true);
+    expect(stored().logs).toHaveLength(0);
+    view.unmount(); render(<App />);
+    await user.click(screen.getByRole('tab', { name: 'Cycling' }));
+    expect(screen.getByRole('button', { name: 'Drag Hill ride into calendar' })).toBeTruthy();
+    expect(stored().plans.some(p => p.templateId === workout.id)).toBe(true);
+  });
+  it("adds a climbing activity to an existing type from the weekly planner", async () => {
+    const user = userEvent.setup(); render(<App />);
+    await user.click(screen.getByRole('button', { name: 'Weekly planner' }));
+    await user.click(screen.getByRole('button', { name: 'Add workout to Hard' }));
+    const dialog = screen.getByRole('dialog');
+    expect((within(dialog).getByLabelText('Workout type') as HTMLSelectElement).value).toBe('hard');
+    expect((within(dialog).getByLabelText('Intensity') as HTMLSelectElement).value).toBe('hard');
+    expect((within(dialog).getByLabelText('Fingers / grip') as HTMLInputElement).checked).toBe(true);
+    await user.type(within(dialog).getByLabelText('Session name'), 'MoonBoard');
+    await user.click(within(dialog).getByRole('button', { name: 'Save session' }));
+    expect(screen.getByRole('button', { name: 'Drag MoonBoard into calendar' })).toBeTruthy();
+    const before = stored();
+    await user.click(screen.getByRole('button', { name: 'Add workout type' }));
+    await user.type(screen.getByLabelText('New workout type'), 'Not saved');
+    await user.click(screen.getByRole('button', { name: 'Close dialog' }));
+    expect(stored()).toEqual(before);
+  });
+  it("rejects duplicate type names without changing the planner", async () => {
+    const user = userEvent.setup(); render(<App />);
+    const before = stored();
+    await user.click(screen.getByRole('button', { name: 'Add workout type' }));
+    await user.type(screen.getByLabelText('New workout type'), ' VOLUME ');
+    await user.click(screen.getByRole('button', { name: 'Create type' }));
+    expect(await screen.findByRole('alert')).toHaveProperty('textContent', expect.stringContaining('already exists'));
+    expect(screen.getByRole('dialog')).toBeTruthy();
+    expect(stored()).toEqual(before);
+    await user.clear(screen.getByLabelText('New workout type'));
+    await user.type(screen.getByLabelText('New workout type'), 'Rest & mobility');
+    await user.click(screen.getByRole('button', { name: 'Create type' }));
+    expect(await screen.findByRole('alert')).toHaveProperty('textContent', expect.stringContaining('already exists'));
+    expect(stored()).toEqual(before);
+  });
+});
+
 describe("profile and custom workout UI", () => {
   it("creates a profile, type and tagged workout, logs it and retains both profiles after reopening", async () => {
     const user = userEvent.setup();

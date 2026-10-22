@@ -29,6 +29,7 @@ import {
   Leaf,
   Mountain,
   Pencil,
+  Plus,
   Sparkles,
   X,
 } from "lucide-react";
@@ -45,6 +46,7 @@ import type {
   PlannedSession,
   SessionTemplate,
   Exercise,
+  WorkoutType,
 } from "./model";
 import { dragExercise } from "./planning";
 import type { PlannerDrag } from "./planning";
@@ -302,18 +304,27 @@ function LibraryBubble({
 }
 export function SessionShelf({
   templates,
+  types,
+  category,
+  onCategoryChange,
+  onAddType,
+  onAddWorkout,
   onChoose,
 }: {
   templates: SessionTemplate[];
+  types: WorkoutType[];
+  category: Category | null;
+  onCategoryChange: (category: Category) => void;
+  onAddType: () => void;
+  onAddWorkout: (category: Category) => void;
   onChoose: (id: string, exercises?: Exercise[]) => void;
 }) {
   const categoryLabels = useTypeLabels();
   const { active } = useDndContext();
-  const categories = [...new Set(templates.map((t) => t.category))].sort(
+  const categories = [...new Set([...types.map((t) => t.id), ...templates.map((t) => t.category)])].sort(
     (a, b) => (a === "rest" ? 1 : b === "rest" ? -1 : 0),
   );
-  const [category, setCategory] = useState(categories[0]);
-  const selected = categories.includes(category) ? category : categories[0];
+  const selected = category && categories.includes(category) ? category : categories[0];
   const id = useId();
   const shown = templates.filter((t) => t.category === selected);
   return (
@@ -331,6 +342,7 @@ export function SessionShelf({
         </div>
         <span className="touch-drag-hint">Hold to lift · or tap to plan</span>
       </div>
+      <div className="shelf-categories-row">
       <div
         className="activity-categories"
         role="tablist"
@@ -345,7 +357,7 @@ export function SessionShelf({
             aria-controls={`${id}-panel`}
             tabIndex={c === selected ? 0 : -1}
             className={`activity-category ${c === selected ? "selected" : ""}`}
-            onClick={() => setCategory(c)}
+            onClick={() => onCategoryChange(c)}
             onKeyDown={(e) => {
               let next: number | undefined;
               if (e.key === "ArrowRight") next = (i + 1) % categories.length;
@@ -355,7 +367,7 @@ export function SessionShelf({
               if (e.key === "End") next = categories.length - 1;
               if (next !== undefined) {
                 e.preventDefault();
-                setCategory(categories[next]);
+                onCategoryChange(categories[next]);
                 document
                   .getElementById(`${id}-tab-${categories[next]}`)
                   ?.focus();
@@ -366,12 +378,17 @@ export function SessionShelf({
           </button>
         ))}
       </div>
+      <button className="activity-category shelf-add-type" onClick={onAddType}>
+        <Plus size={14} /> Add workout type
+      </button>
+      </div>
       <div
         role="tabpanel"
         id={`${id}-panel`}
         aria-labelledby={`${id}-tab-${selected}`}
         className="category-activities"
       >
+        {!shown.length && <p className="shelf-empty">Add your first {categoryLabels[selected] ?? ""} workout, then drag it into your week.</p>}
         {shown.some((t) => !t.exercises.length) && (
           <div className="workout-shelf">
             {shown
@@ -411,6 +428,13 @@ export function SessionShelf({
               </div>
             </div>
           ))}
+        {selected && <button
+          className="shelf-add-workout"
+          aria-label={`Add workout to ${categoryLabels[selected] ?? selected}`}
+          onClick={() => onAddWorkout(selected)}
+        >
+          <Plus size={17} /> Add workout
+        </button>}
       </div>
       <p className="shelf-footnote">
         Add as many activities as you need. Exercises from one routine build a
