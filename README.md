@@ -2,6 +2,8 @@
 
 Vibe coded with Codex: a personal training app built around recovery, flexibility and steady progress.
 
+[Open Crux](https://fsfetcu.github.io/Crux/) · [Source on GitHub](https://github.com/fsfetcu/Crux)
+
 A complete mobile-first React + TypeScript app for flexible, recovery-based training, with installable PWA support, offline use, custom profiles, draggable exercises and day-specific exercise values. No app account, API keys, database server, or backend is needed. All personal training data stays in your browser's local storage. The standalone app has no login; hosting access controls are a separate choice.
 
 ## Run locally
@@ -112,7 +114,7 @@ The app intentionally starts with **no invented training history or check-ins**.
 
 The GitHub-ready production build was checked in a real browser at `/crux-planner/`. The icon loaded from that path, the manifest referenced that path, and the interface fit a 390-pixel phone viewport without horizontal overflow. Saved a daily check-in and a bench-press plan with 4 × 8 and 2 min rest, closed the tab, stopped the preview server (HTTP 000), and reopened the cached app. Both the check-in and the exact exercise values remained available offline.
 
-Earlier feature checks covered 320, 375, 390, 430 and 1440-pixel layouts, pointer and keyboard dragging, multiple profiles and saving completed workouts offline. Physical iPhone Safari, home-screen installation and an entire OS/browser restart remain untested. GitHub-hosted Actions and Pages deployment require completing repository setup; local test/build success does not establish a live GitHub deployment.
+Earlier feature checks covered 320, 375, 390, 430 and 1440-pixel layouts, pointer and keyboard dragging, multiple profiles and saving completed workouts offline. Physical iPhone Safari, home-screen installation and an entire OS/browser restart remain untested. GitHub Actions runs the tests and production build before each Pages deployment. The repository is configured to publish the main branch at `https://fsfetcu.github.io/Crux/`.
 
 ## Drag-and-drop planning
 
