@@ -78,6 +78,18 @@ label { color:#465342; }
 .set-toggle:active { transform:scale(.95); }
 .spinning { animation:spin .9s linear infinite; }
 @keyframes spin { to { transform:rotate(360deg); } }
+/* Keep every day mounted so touch swipes and dragged workouts share one rail. */
+.calendar-scroll-frame { position:relative; margin:0 23px; min-width:0; }
+.calendar-panel .calendar-grid { display:grid; grid-template-columns:repeat(7,minmax(140px,1fr)); margin:0; overflow-x:auto; overflow-y:hidden; overscroll-behavior-x:contain; -webkit-overflow-scrolling:touch; touch-action:pan-x pan-y pinch-zoom; scrollbar-width:thin; scrollbar-color:#bdcbb0 transparent; }
+.calendar-panel .calendar-day { display:flex; flex-direction:column; align-items:stretch; }
+.calendar-swipe-hint { display:none; align-items:center; gap:6px; margin:0 17px 10px; color:#67765e; font-size:10px; line-height:1.6; }
+.calendar-scroll-edge { position:absolute; top:0; bottom:14px; width:43px; display:none; align-items:center; pointer-events:none; z-index:4; color:#3c592f; opacity:.8; }
+.calendar-scroll-edge svg { border-radius:50%; background:#f7fbefec; border:1px solid #c1d2b0; box-shadow:0 2px 8px #40552a22; padding:3px; width:29px; height:29px; }
+.calendar-scroll-edge.left { left:0; justify-content:flex-start; background:linear-gradient(90deg,#e3eed8bb,transparent); }
+.calendar-scroll-edge.right { right:0; justify-content:flex-end; background:linear-gradient(270deg,#e3eed8bb,transparent); }
+.calendar-scroll-frame[data-dragging="true"][data-can-left="true"] .calendar-scroll-edge.left, .calendar-scroll-frame[data-dragging="true"][data-can-right="true"] .calendar-scroll-edge.right { display:flex; }
+.calendar-scroll-frame[data-edge="-1"] .calendar-scroll-edge.left, .calendar-scroll-frame[data-edge="1"] .calendar-scroll-edge.right { opacity:1; background-color:#d4e4bd44; }
+.dragging-workout .calendar-panel .calendar-grid { scroll-snap-type:none; }
 @media(max-width:650px) {
   .main-content { padding-bottom:110px; }
   .topbar .mobile-menu, .topbar .account-button { display:none; }
@@ -124,10 +136,10 @@ label { color:#465342; }
   .phone-date-tab > small { font-size:8px; min-height:10px; }
   .phone-date-tab.selected { background:#425d38; color:#fff; }
   .phone-date-tab.drop-target { border-color:#739853; background:#e0edcd; color:#38522d; box-shadow:0 0 0 2px #b7cda0; }
-  .calendar-panel .calendar-grid { display:block; padding:0 14px 14px; }
-  .calendar-panel .calendar-day { display:none; }
-  .calendar-panel .calendar-day.selected-day { display:flex; min-height:190px; border-radius:21px; padding:17px; background:#fafcf6; }
-  .dragging-workout .calendar-panel .calendar-day { display:flex; margin-bottom:8px; min-height:110px; }
+  .calendar-panel .calendar-scroll-frame { margin:0 14px; }
+  .calendar-panel .calendar-grid { grid-template-columns:none; grid-auto-flow:column; grid-auto-columns:100%; gap:10px; padding:3px 0 14px; border:0; border-radius:0; scroll-snap-type:x mandatory; }
+  .calendar-panel .calendar-day { display:flex; min-height:190px; min-width:0; border:1px solid #e1e7d9; border-radius:21px; padding:17px; background:#fafcf6; scroll-snap-align:start; scroll-snap-stop:always; }
+  .calendar-panel .calendar-swipe-hint { display:flex; }
   .calendar-panel .calendar-session { font-size:14px; padding:13px; border-radius:16px; }
   .calendar-panel .planned-exercise { padding:11px; }
   .calendar-panel .planned-exercise strong { font-size:13px; }

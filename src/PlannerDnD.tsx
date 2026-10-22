@@ -1,5 +1,5 @@
 import { useTypeLabels } from "./ProfileContext";
-import { useEffect, useState, useId } from "react";
+import { useEffect, useState, useId, useRef, useCallback } from "react";
 import type { ReactNode } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -17,6 +17,7 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import type {
+  UniqueIdentifier,
   CollisionDetection,
   KeyboardCoordinateGetter,
 } from "@dnd-kit/core";
@@ -76,10 +77,25 @@ const labelDate = (date: string) =>
     day: "numeric",
     month: "short",
   });
-const collisions: CollisionDetection = (args) =>
-  args.pointerCoordinates ? pointerWithin(args) : closestCenter(args);
+export function plannerCollisions(args:Parameters<CollisionDetection>[0],keyboardTarget:UniqueIdentifier|null=null) {
+  if(!args.pointerCoordinates){
+    const destination=args.droppableContainers.find((item)=>item.id===keyboardTarget);
+    // KeyboardSensor also scrolls a dragged card's ancestors. Keep the chosen
+    // date authoritative when that changes its collision rectangle.
+    return destination?[{id:destination.id,data:{droppableContainer:destination,value:1}}]:closestCenter(args);
+  }
+  const point=args.pointerCoordinates;
+  // A clipped/off-screen day must not accept a drop in the page margins.
+  const droppableContainers=args.droppableContainers.filter((container)=>{
+    const rail=container.node.current?.closest(".calendar-scroll");
+    if(!rail)return true;
+    const rect=rail.getBoundingClientRect();
+    return point.x>=rect.left&&point.x<=rect.right&&point.y>=rect.top&&point.y<=rect.bottom;
+  });
+  return pointerWithin({...args,droppableContainers});
+}
 
-const calendarKeyboard: KeyboardCoordinateGetter = (event, { context }) => {
+function keyboardDayTarget(event:KeyboardEvent,context:Parameters<KeyboardCoordinateGetter>[1]["context"]) {
   const direction = ["ArrowRight", "ArrowDown"].includes(event.code)
     ? 1
     : ["ArrowLeft", "ArrowUp"].includes(event.code)
@@ -87,21 +103,27 @@ const calendarKeyboard: KeyboardCoordinateGetter = (event, { context }) => {
       : 0;
   if (!direction) return;
   event.preventDefault();
-  const days = context.droppableContainers
+  const available = context.droppableContainers
     .getEnabled()
-    .filter((c) => c.data.current?.date && (context.droppableRects.get(c.id)?.width ?? 0)>0)
-    .sort((a, b) =>
+    .filter((c) => c.data.current?.date && (context.droppableRects.get(c.id)?.width ?? 0)>0);
+  const tabs=available.filter((c)=>String(c.id).startsWith("date-tab:"));
+  const days=(tabs.length?tabs:available).sort((a, b) =>
       String(a.data.current?.date).localeCompare(String(b.data.current?.date)),
     );
   if (!days.length) return;
-  const index = days.findIndex((d) => d.id === context.over?.id);
+  const index = days.findIndex((d) => d.id === context.over?.id || (context.over?.data.current?.date && d.data.current?.date === context.over.data.current.date));
   const next =
     index < 0
       ? direction === 1
         ? 0
         : days.length - 1
       : Math.max(0, Math.min(days.length - 1, index + direction));
-  const rect = context.droppableRects.get(days[next].id);
+  return days[next];
+}
+export const calendarKeyboard: KeyboardCoordinateGetter = (event, { context }) => {
+  const target=keyboardDayTarget(event,context);
+  if(!target)return;
+  const rect = context.droppableRects.get(target.id);
   if (rect)
     return {
       x: rect.left + (rect.width - (context.collisionRect?.width ?? 0)) / 2,
@@ -122,12 +144,19 @@ export function PlannerDragContext({
 }) {
   const categoryLabels = useTypeLabels();
   const [active, setActive] = useState<PlannerDrag | null>(null);
+  const keyboardTarget=useRef<UniqueIdentifier|null>(null);
+  const keyboardCoordinates=useCallback<KeyboardCoordinateGetter>((event,args)=>{
+    const target=keyboardDayTarget(event,args.context);
+    if(target)keyboardTarget.current=target.id;
+    return calendarKeyboard(event,args);
+  },[]);
+  const detectCollisions=useCallback<CollisionDetection>((args)=>plannerCollisions(args,keyboardTarget.current),[]);
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 7 } }),
     useSensor(TouchSensor, {
       activationConstraint: { delay: 200, tolerance: 8 },
     }),
-    useSensor(KeyboardSensor, { coordinateGetter: calendarKeyboard }),
+    useSensor(KeyboardSensor, { coordinateGetter: keyboardCoordinates }),
   );
   const original = templates.find((t) => t.id === active?.templateId);
   const exercise = active
@@ -165,8 +194,8 @@ export function PlannerDragContext({
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={collisions}
-      autoScroll={{ threshold: { x: 0.15, y: 0.2 }, acceleration: 10 }}
+      collisionDetection={detectCollisions}
+      autoScroll={{ threshold: { x: 0.15, y: 0.2 }, acceleration: 10, canScroll:(element)=>!element.classList.contains("calendar-scroll") }}
       accessibility={{
         screenReaderInstructions: {
           draggable:
@@ -186,13 +215,12 @@ export function PlannerDragContext({
           onDragCancel: () => "Drag cancelled. Your plan has not changed.",
         },
       }}
-      onDragStart={({ active }) =>
-        setActive(active.data.current as PlannerDrag)
-      }
-      onDragCancel={() => setActive(null)}
+      onDragStart={({ active }) => {keyboardTarget.current=null;setActive(active.data.current as PlannerDrag);}}
+      onDragCancel={() => {keyboardTarget.current=null;setActive(null);}}
       onDragEnd={({ active, over }) => {
         const data = active.data.current as PlannerDrag | undefined;
         const date = over?.data.current?.date;
+        keyboardTarget.current=null;
         if (data && typeof date === "string") onDrop(data, date);
         setActive(null);
       }}

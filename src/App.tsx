@@ -1,4 +1,4 @@
-import { useDndMonitor } from "@dnd-kit/core";
+import { useWeekCalendar } from "./useWeekCalendar";
 import { ProfileProvider, useProfiles, useTypeLabels } from "./ProfileContext";
 import { AccountProvider, useAccount } from "./accounts/AccountContext";
 import { AccountControl, syncLabels } from "./accounts/AccountControl";
@@ -993,9 +993,7 @@ function Calendar({
   onConnect: () => void;
   compact?: boolean;
 }) {
-  const [selectedDay,setSelectedDay]=useState(inWeek(dayKey(),start)?dayKey():start);
-  useEffect(()=>setSelectedDay(inWeek(dayKey(),start)?dayKey():start),[start]);
-  useDndMonitor({onDragEnd:({over})=>{const date=over?.data.current?.date;if(typeof date==="string")setSelectedDay(date);}});
+  const {scrollRef,selectedDay,selectDay,readScroll,dragging,edge,available}=useWeekCalendar(start);
   return (
     <section
       className={`panel calendar-panel ${compact ? "compact-calendar" : ""}`}
@@ -1016,7 +1014,7 @@ function Calendar({
           <button className="text-button swap-button" onClick={onSwap}>
             <ArrowLeftRight size={15} /> Swap days
           </button>
-          <button className="text-button" onClick={()=>{setSelectedDay(dayKey());onToday();}}>
+          <button className="text-button" onClick={()=>{selectDay(dayKey());onToday();}}>
             Today
           </button>
           <div className="arrow-group">
@@ -1043,8 +1041,10 @@ function Calendar({
         </button>
         <span className="muted small">Take your plans with you</span>
       </div>
-      <div className="phone-week-strip" aria-label="Choose a calendar day">{Array.from({length:7},(_,i)=>{const date=addDays(start,i);return <CalendarDayTab key={date} date={date} selected={selectedDay===date} count={state.plans.filter((p)=>p.date===date).length+state.logs.filter((l)=>logDay(l)===date).length} onSelect={()=>setSelectedDay(date)}/>;})}</div>
-      <div className="calendar-grid">
+      <div className="phone-week-strip" aria-label="Choose a calendar day">{Array.from({length:7},(_,i)=>{const date=addDays(start,i);return <CalendarDayTab key={date} date={date} selected={selectedDay===date} count={state.plans.filter((p)=>p.date===date).length+state.logs.filter((l)=>logDay(l)===date).length} onSelect={()=>selectDay(date)}/>;})}</div>
+      <p className="calendar-swipe-hint"><ArrowLeftRight size={13}/>Swipe through the week · Hold near an edge while dragging</p>
+      <div className="calendar-scroll-frame" data-dragging={dragging} data-edge={edge} data-can-left={available.left} data-can-right={available.right}>
+      <div className="calendar-grid calendar-scroll" ref={scrollRef} onScroll={readScroll} role="region" aria-label="Weekly calendar, scroll left or right" tabIndex={0}>
         {Array.from({ length: 7 }, (_, i) => {
           const date = addDays(start, i),
             today = date === dayKey();
@@ -1116,6 +1116,9 @@ function Calendar({
             </CalendarDropDay>
           );
         })}
+      </div>
+      <span className="calendar-scroll-edge left" aria-hidden="true"><ChevronLeft size={22}/></span>
+      <span className="calendar-scroll-edge right" aria-hidden="true"><ChevronRight size={22}/></span>
       </div>
       <div className="calendar-legend">
         <span>
