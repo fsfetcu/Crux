@@ -3,7 +3,13 @@ const BASE = new URL(self.registration.scope).pathname;
 const ASSETS = `${BASE}assets/`;
 // Each project on username.github.io has a separate worker/cache namespace.
 const CACHE_PREFIX = `crux-shell-${encodeURIComponent(BASE)}-`;
-const CACHE = `${CACHE_PREFIX}__CRUX_BUILD__`;
+const VERSION = "__CRUX_BUILD__";
+const CACHE = `${CACHE_PREFIX}${VERSION}`;
+self.addEventListener("message", (event) => {
+  if (event.data?.type === "CRUX_GET_VERSION") {
+    event.source?.postMessage({ type: "CRUX_VERSION", version: VERSION });
+  }
+});
 const APP_FILES = [
   "icon.svg",
   "icon-192.png",
@@ -29,7 +35,8 @@ self.addEventListener("install", (event) => {
         !response.ok ||
         response.redirected ||
         !assets.length ||
-        !html.includes('id="root"')
+        !html.includes('id="root"') ||
+        !html.includes(`name="crux-build" content="${VERSION}"`)
       ) {
         throw new Error(
           "The app shell is unavailable; retain the previous offline version.",

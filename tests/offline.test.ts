@@ -6,8 +6,8 @@ const source = readFileSync(
   "utf8",
 ).replaceAll("__CRUX_BUILD__", "test-build");
 const origin = "http://127.0.0.1:4173";
-function harness(failAsset = false, login = false, base = "/") {
-  const html = `<html><div id="root"></div><script src="${base}assets/app-test.js"></script><link href="${base}assets/app-test.css"></html>`;
+function harness(failAsset = false, login = false, base = "/", mismatchedVersion = false) {
+  const html = `<html><meta name="crux-build" content="${mismatchedVersion ? "old-build" : "test-build"}"><div id="root"></div><script src="${base}assets/app-test.js"></script><link href="${base}assets/app-test.css"></html>`;
   const prefix = `crux-shell-${encodeURIComponent(base)}-`;
   const cacheName = `${prefix}test-build`;
   const oldCacheName = `${prefix}old`;
@@ -100,6 +100,7 @@ function harness(failAsset = false, login = false, base = "/") {
     return work;
   };
   return {
+    message: (event: unknown) => listeners.message(event),
     stores,
     cacheName,
     oldCacheName,
@@ -180,6 +181,18 @@ describe.each(["/", "/crux-planner/"])(
           await h.request("/another-app/assets/main.js", "cors"),
         ).toBeUndefined();
       }
+    });
+    it("reports the downloaded build to suspended or older clients", async () => {
+      const h = harness(false, false, base), postMessage = vi.fn();
+      h.message({data:{type:"CRUX_GET_VERSION"},source:{postMessage}});
+      expect(postMessage).toHaveBeenCalledWith({type:"CRUX_VERSION",version:"test-build"});
+    });
+    it("retains the previous app when a deployment serves mismatched HTML and worker versions", async () => {
+      const h = harness(false, false, base, true);
+      h.stores.set(h.oldCacheName, new Map([[base, new Response("previous usable app")]]));
+      await expect(h.lifecycle("install")).rejects.toThrow("app shell is unavailable");
+      expect(h.stores.has(h.oldCacheName)).toBe(true);
+      expect(h.skipWaiting).not.toHaveBeenCalled();
     });
     it("keeps a neighboring project's offline cache when activating", async () => {
       const h = harness(false, false, base);

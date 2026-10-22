@@ -11,6 +11,7 @@ const version = createHash("sha256")
   .update(manifest)
   .digest("hex")
   .slice(0, 16);
+writeFileSync(new URL("index.html", path), html.replace("</head>", `<meta name="crux-build" content="${version}" /></head>`));
 writeFileSync(workerPath, worker.replaceAll("__CRUX_BUILD__", version));
 writeFileSync(new URL(".nojekyll", path), "");
 console.log(`Offline app cache: ${version}`);

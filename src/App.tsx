@@ -10,7 +10,7 @@ import { catalogueFromTemplate, templateInPlan } from "./catalogue";
 import { WorkoutRunner } from "./WorkoutRunner";
 import { completedExercises,createWorkoutDraft,parseWorkoutDraft,workoutDraftKey } from "./workoutDraft";
 import type { WorkoutDraft } from "./workoutDraft";
-import { checkForAppUpdate,refreshApp,useAppUpdates } from "./appUpdates";
+import { checkForAppUpdate,refreshApp,useAppUpdates,useSafeAppUpdate,updateIsBlocked } from "./appUpdates";
 import { GradeCountFields, GradeStatistics, WeightInput } from "./TrainingFields";
 import { normalizeGradeCounts, gradeTotals, gradeSystemLabels } from "./grades";
 import { Modal } from "./Modal";
@@ -203,7 +203,7 @@ function CheckInPanel({
   );
   if(saved&&!expanded)return <div className="checkin checkin-collapsed"><div><span className="eyebrow">CHECKED IN TODAY</span><h2>{saved.recovery==="recovered"?"Feeling recovered":saved.recovery==="somewhat"?"Some fatigue today":"Taking recovery seriously"}</h2><p className={saved.fingers==="pain"?"checkin-pain":"muted"}>{fingerRelevant?`Fingers: ${saved.fingers==="fresh"?"fresh":saved.fingers==="tired"?"tired":"pain / discomfort"} · `:""}Energy: {saved.energy}</p></div><button className="text-button" onClick={()=>setExpanded(true)}><Pencil size={15}/>Edit check-in</button></div>;
   return (
-    <div className="checkin">
+    <div className="checkin" data-update-block={JSON.stringify(value)!==JSON.stringify(saved??defaultCheckIn)?"":undefined}>
       <div className="eyebrow">
         <span className="status-dot" /> YOUR DAILY CHECK-IN{" "}
         <span className="subtle">{saved ? "Saved today" : "Start here"}</span>
@@ -1524,6 +1524,7 @@ function TrainingApp() {
   const recoveryLogs = profiles.data.profiles.flatMap((p) => p.state.logs);
   const { online, offlineReady } = useAppStatus();
   const appUpdate=useAppUpdates();
+  useSafeAppUpdate(appUpdate.ready,storageReady);
   const draftKey=workoutDraftKey(account.user?.id??null,profiles.active.id);
   const [workoutDraft,setWorkoutDraft]=useState<WorkoutDraft|null>(()=>{try{const raw=localStorage.getItem(draftKey);if(!raw)return null;const d=parseWorkoutDraft(raw,profiles.active.id);return state.logs.some((l)=>l.id===d.id)?null:d;}catch{return null;}});
   const [runningWorkout,setRunningWorkout]=useState(false);
@@ -1918,8 +1919,8 @@ function TrainingApp() {
             </div>
           </header>
           <div className="main-content">
-            <div className="app-status-row"><span className={`save-indicator ${!online?"offline":profiles.syncStatus}`} role="status"><span className="status-dot"/>{!storageReady?"Saving needs attention":!online?"Offline · saved on this phone":account.user?syncLabels[profiles.syncStatus]:"Saved on this phone"}</span>{appUpdate.ready?<button className="update-pill" onClick={()=>{if(document.querySelector('[role="dialog"]')||logOptions||plan||newWorkout||runningWorkout){notify("Finish or close the open editor before refreshing. Your workout draft stays saved.");return;}refreshApp();}}><RefreshCw size={14}/>Update available · Refresh</button>:<button className="update-check" disabled={appUpdate.checking} onClick={()=>void checkForAppUpdate()}><RefreshCw size={13} className={appUpdate.checking?"spinning":""}/>{appUpdate.checking?"Checking…":"Check for updates"}</button>}</div>
-            {appUpdate.message&&<p className="update-message small" role="status">{appUpdate.message}</p>}
+            <div className="app-status-row"><span className={`save-indicator ${!online?"offline":profiles.syncStatus}`} role="status"><span className="status-dot"/>{!storageReady?"Saving needs attention":!online?"Offline · saved on this phone":account.user?syncLabels[profiles.syncStatus]:"Saved on this phone"}</span>{appUpdate.ready?<button className="update-pill" onClick={()=>{if(!storageReady){notify("Resolve the saving issue before updating.");return;}if(updateIsBlocked()||logOptions||plan||newWorkout||runningWorkout){notify("Finish or close the editor, or pause your workout with Continue later. You can update from Today; your workout draft stays saved.");return;}refreshApp();}}><RefreshCw size={14}/>Update now</button>:<button className="update-check" disabled={appUpdate.checking} onClick={()=>void checkForAppUpdate()}><RefreshCw size={13} className={appUpdate.checking?"spinning":""}/>{appUpdate.checking?"Checking…":"Check for updates"}</button>}</div>
+            {appUpdate.ready?<p className="update-message small" role="status">Update ready. Applies automatically when you’re idle. Open workouts and editors wait; saved training and workout drafts stay on this phone.</p>:appUpdate.message&&<p className="update-message small" role="status">{appUpdate.message}</p>}
             {workoutDraft&&<div className="resume-workout"><div><strong>{workoutDraft.template.name}</strong><span>Workout in progress · saved on this phone</span></div><button className="button" onClick={()=>setRunningWorkout(true)}><Play size={16}/>Resume workout</button></div>}
             {account.user && (profiles.syncMessage || profiles.conflict) && (
               <section className="cloud-notice" role="status">

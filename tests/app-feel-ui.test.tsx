@@ -21,6 +21,15 @@ describe("phone app flows",()=>{
     await user.click(screen.getByRole("button",{name:"Profile and settings"}));
     await user.click(within(screen.getByRole("dialog")).getByRole("button",{name:"Settings"}));expect(screen.getByRole("heading",{name:"Training preferences"})).toBeTruthy();
   });
+  it("defers an automatic update while a recovery check-in has unsaved choices",async()=>{
+    const user=userEvent.setup();render(<App/>);
+    expect(document.querySelector("[data-update-block]")).toBeNull();
+    await user.click(screen.getByRole("button",{name:"Somewhat fatigued"}));
+    expect(document.querySelector("[data-update-block]")).toBeTruthy();
+    await user.click(screen.getByRole("button",{name:"Get my recommendation"}));
+    expect(document.querySelector("[data-update-block]")).toBeNull();
+    expect(saved().profiles[0].state.checkins[dayKey()].recovery).toBe("somewhat");
+  });
   it("resumes a workout with completed sets and weights, then logs only the work done",async()=>{
     const user=userEvent.setup();let view=render(<App/>);
     await user.click(screen.getByRole("button",{name:"Plan"}));await user.click(screen.getByRole("tab",{name:"Strength"}));
