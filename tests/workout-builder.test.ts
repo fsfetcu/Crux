@@ -1,0 +1,54 @@
+import { describe,it,expect } from "vitest";
+import { addCatalogueToPlan, composeStrengthWorkout, copyCatalogueExercise, initialCatalogue, templateInPlan } from "../src/catalogue";
+import { firstProfile,parseProfileBackup } from "../src/profiles";
+import type { ProfileData } from "../src/profiles";
+import { dayKey,initialState,trainingTags,weekCounts } from "../src/model";
+import { dropSession,moveSession } from "../src/planning";
+
+describe("reusable strength workouts",()=>{
+  it("copies catalogue defaults, keeps independent prescriptions and loading, and schedules the full routine",()=>{
+    const data=firstProfile(initialState());
+    const pull=data.catalogue!.find((i)=>i.name==="Weighted pull-ups")!;
+    const bench=data.catalogue!.find((i)=>i.kind==="exercise"&&i.name==="Bench press")!;
+    const exercises=[copyCatalogueExercise(pull),copyCatalogueExercise(bench)];
+    Object.assign(exercises[0],{sets:"5",reps:"3",rest:"3 min",weightKg:12.5,intensity:"hard"});
+    Object.assign(exercises[1],{sets:"4",reps:"8",rest:"2 min",weightKg:60});
+    const routine=composeStrengthWorkout("Pull and push","Gym",exercises);
+    expect(trainingTags(routine)).toEqual({intensity:"hard",loading:["upper","fingers"]});
+    expect(pull.exercises[0]).toMatchObject({sets:"3",reps:"5",rest:"180 s"});
+    expect(pull.exercises[0].weightKg).toBeUndefined();
+    expect(exercises[0].id).not.toBe(pull.exercises[0].id);
+    exercises[0].weightKg=20;expect(routine.exercises[0].weightKg).toBe(12.5);
+    const added=addCatalogueToPlan({...data,catalogue:[...data.catalogue!,routine]},routine,data.activeProfileId,"strength");
+    const profile=added.profiles[0],template=templateInPlan(routine,profile)!;
+    const planned=dropSession(profile.state,{kind:"template",templateId:template.id},dayKey(),"routine-day");
+    expect(planned.plans).toEqual([{id:"routine-day",templateId:template.id,date:dayKey()}]);
+    expect(planned.templates.find((t)=>t.id===template.id)!.exercises).toEqual(routine.exercises);
+    const moved=moveSession(planned,"routine-day","2026-10-25");
+    expect(moved.logs).toEqual(profile.state.logs);
+    expect(moved.plans[0].date).toBe("2026-10-25");
+    expect(parseProfileBackup(JSON.stringify(added))).toEqual(added);
+    expect(()=>composeStrengthWorkout("Empty","",[])).toThrow(/Select/);
+  });
+  it("upgrades default names once, adds board volume alternatives, and preserves personal changes and actual history",()=>{
+    const state=initialState();
+    state.templates.find((t)=>t.id==="spray")!.name="My spray projects";
+    state.templates.find((t)=>t.id==="strength")!.exercises[0].weightKg=32.5;
+    state.plans=[{id:"planned",templateId:"strength",date:dayKey(),exercises:[{...state.templates.find((t)=>t.id==="strength")!.exercises[0],sets:"6"}]}];
+    state.logs=[{id:"old",templateId:"kilter",category:"hard",name:"Kilter",location:"Board",timestamp:new Date().toISOString(),rpe:8,fingers:"fresh",duration:60,notes:"My notes",fingerLoad:true,projects:[],exercises:[],gradeCounts:[{system:"font",grade:"7A",count:2}]}];
+    const profile={id:"legacy",name:"Original",state};
+    const legacy:ProfileData={version:2,activeProfileId:profile.id,profiles:[profile],catalogue:initialCatalogue([profile])};
+    const migrated=parseProfileBackup(JSON.stringify(legacy)),next=migrated.profiles[0].state;
+    expect(next.templates.map((t)=>t.name)).toEqual(expect.arrayContaining(["Kilter projecting","Tension Board projecting","Kilter volume","Tension Board volume","My spray projects","Full-body strength"]));
+    expect(next.logs).toEqual(state.logs);expect(next.plans).toEqual(state.plans);expect(next.settings).toEqual(state.settings);expect(next.weeks).toEqual(state.weeks);
+    expect(next.templates.find((t)=>t.id==="strength")!.exercises[0]).toMatchObject({name:"Single-arm lat pulldown",weightKg:32.5});
+    expect(weekCounts(next.logs,dayKey()).hard).toBe(1);
+    expect(parseProfileBackup(JSON.stringify(migrated))).toEqual(migrated);
+    migrated.catalogue=migrated.catalogue!.filter((i)=>i.id!=="starter:weighted-pull-ups");
+    next.templates=next.templates.filter((t)=>t.id!=="kilter-volume");
+    const reopened=parseProfileBackup(JSON.stringify(migrated));
+    expect(reopened.catalogue!.some((i)=>i.id==="starter:weighted-pull-ups")).toBe(false);
+    expect(reopened.profiles[0].state.templates.some((t)=>t.id==="kilter-volume")).toBe(false);
+    expect(parseProfileBackup(JSON.stringify({...legacy,catalogue:[]})).catalogue).toEqual([]);
+  });
+});

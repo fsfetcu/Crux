@@ -41,7 +41,7 @@ describe("working application flows", () => {
     const user = userEvent.setup();
     render(<App />);
     await user.click(
-      screen.getByRole("button", { name: "Drag SprayWall into calendar" }),
+      screen.getByRole("button", { name: "Drag Spray wall projecting into calendar" }),
     );
     const dialog = screen.getByRole("dialog");
     expect(
@@ -190,7 +190,7 @@ describe("working application flows", () => {
     await user.click(within(d).getByRole("button", { name: "Add to planner" }));
     expect(stored().plans).toHaveLength(2);
     await user.click(
-      screen.getByRole("button", { name: `Edit Kilter on ${dayKey()}` }),
+      screen.getByRole("button", { name: `Edit Kilter projecting on ${dayKey()}` }),
     );
     d = screen.getByRole("dialog");
     const next = addDays(dayKey(), 3);
@@ -210,7 +210,7 @@ describe("working application flows", () => {
     localStorage.setItem("crux-planner-v1", JSON.stringify(s));
     render(<App />);
     await user.click(
-      screen.getByRole("button", { name: "Complete SprayWall" }),
+      screen.getByRole("button", { name: "Complete Spray wall projecting" }),
     );
     await user.click(
       within(screen.getByRole("dialog")).getByRole("button", {
@@ -221,7 +221,7 @@ describe("working application flows", () => {
     expect(stored().logs[0].category).toBe("hard");
     expect(stored().plans).toHaveLength(0);
     expect(
-      screen.queryByRole("button", { name: "Complete SprayWall" }),
+      screen.queryByRole("button", { name: "Complete Spray wall projecting" }),
     ).toBeNull();
   });
   it("edits the Beastmaker rest interval without rewriting a previous workout", async () => {
@@ -252,12 +252,12 @@ describe("working application flows", () => {
       screen.getByRole("button", { name: "Settings" }),
     );
     const summary = screen
-      .getByText("Strength", { selector: "strong" })
+      .getByText("Full-body strength", { selector: "strong" })
       .closest("summary")!;
     await user.click(summary);
     const details = summary.closest("details")!;
     const rest = within(details).getByLabelText(
-      "Beastmaker 2000 slopers rest interval",
+      "Beastmaker 2000 sloper hangs rest interval",
     );
     await user.clear(rest);
     await user.type(rest, "240 s");
@@ -462,7 +462,7 @@ describe("profile and custom workout UI", () => {
     );
     expect(stored().logs).toHaveLength(0);
     expect(
-      screen.getByRole("button", { name: "Drag Kilter into calendar" }),
+      screen.getByRole("button", { name: "Drag Kilter projecting into calendar" }),
     ).toBeTruthy();
     const data = JSON.parse(localStorage.getItem("crux-planner-profiles-v2")!);
     const runningId = data.profiles.find(
@@ -512,7 +512,7 @@ describe("profile and custom workout UI", () => {
       screen.getByLabelText("Copy current workout library and goals"),
     );
     await user.click(screen.getByRole("button", { name: "Create profile" }));
-    expect(stored().templates).toHaveLength(7);
+    expect(stored().templates).toHaveLength(9);
     expect(stored().logs).toHaveLength(0);
     await user.click(
       screen.getByRole("button", { name: "Get my recommendation" }),
@@ -585,7 +585,7 @@ describe("actual exercises in calendar categories", () => {
       rest: "150 s",
     });
     expect(stored().plans[1]).toEqual(state.plans[1]);
-    expect(stored().templates).toEqual(state.templates);
+    expect(stored().templates).toEqual(firstProfile(state).profiles[0].state.templates);
     expect(stored().logs).toEqual(state.logs);
     view.unmount();
     render(<App />);
@@ -617,7 +617,7 @@ describe("actual exercises in calendar categories", () => {
       rest: "150 s",
     });
     expect(stored().plans).toEqual([state.plans[1]]);
-    expect(stored().templates).toEqual(state.templates);
+    expect(stored().templates).toEqual(firstProfile(state).profiles[0].state.templates);
   });
 
   it("customizes a full routine without dropping exercises, discards cancelled edits, and resets only selected day values", async () => {
@@ -632,7 +632,7 @@ describe("actual exercises in calendar categories", () => {
     render(<App />);
     const open = () =>
       user.click(
-        screen.getByRole("button", { name: `Edit Strength on ${dayKey()}` }),
+        screen.getByRole("button", { name: `Edit Full-body strength on ${dayKey()}` }),
       );
     await open();
     fireEvent.change(screen.getByLabelText("Bench press sets for this day"), {
@@ -686,7 +686,7 @@ describe("actual exercises in calendar categories", () => {
     expect(
       stored().plans[0].exercises?.find((e) => e.id === "bench")?.reps,
     ).toBe("5");
-    expect(stored().templates).toEqual(state.templates);
+    expect(stored().templates).toEqual(firstProfile(state).profiles[0].state.templates);
   });
 
   it("shows named activities inside their category and actual strength/stretching exercises", async () => {
@@ -696,25 +696,25 @@ describe("actual exercises in calendar categories", () => {
       screen.getByRole("tab", { name: "Hard" }).getAttribute("aria-selected"),
     ).toBe("true");
     expect(
-      screen.getByRole("button", { name: "Drag Tension Board into calendar" }),
+      screen.getByRole("button", { name: "Drag Tension Board projecting into calendar" }),
     ).toBeTruthy();
     await user.click(screen.getByRole("tab", { name: "Strength" }));
     expect(
       screen.getByRole("button", {
-        name: "Drag Bench press from Strength into calendar",
+        name: "Drag Bench press from Full-body strength into calendar",
       }),
     ).toBeTruthy();
     expect(
       screen.getByRole("button", {
-        name: "Drag Stretching from Strength into calendar",
+        name: "Drag Stretching & mobility from Full-body strength into calendar",
       }),
     ).toBeTruthy();
     expect(
-      screen.queryByRole("button", { name: "Drag Kilter into calendar" }),
+      screen.queryByRole("button", { name: "Drag Kilter projecting into calendar" }),
     ).toBeNull();
     await user.click(screen.getByRole("tab", { name: "Chill" }));
     expect(
-      screen.getByRole("button", { name: "Drag Revolt Chill into calendar" }),
+      screen.getByRole("button", { name: "Drag Revolt easy climbing into calendar" }),
     ).toBeTruthy();
     expect(stored().plans).toHaveLength(0);
   });
@@ -725,7 +725,7 @@ describe("actual exercises in calendar categories", () => {
     await user.click(screen.getByRole("tab", { name: "Strength" }));
     await user.click(
       screen.getByRole("button", {
-        name: "Drag Bench press from Strength into calendar",
+        name: "Drag Bench press from Full-body strength into calendar",
       }),
     );
     let dialog = screen.getByRole("dialog");
@@ -736,7 +736,7 @@ describe("actual exercises in calendar categories", () => {
     expect(
       (
         within(dialog).getByLabelText(
-          /Beastmaker 2000 slopers5/,
+          /Beastmaker 2000 sloper hangs5/,
         ) as HTMLInputElement
       ).checked,
     ).toBe(false);
@@ -745,7 +745,7 @@ describe("actual exercises in calendar categories", () => {
     );
     await user.click(
       screen.getByRole("button", {
-        name: "Drag Isolated one-arm lat pulldown from Strength into calendar",
+        name: "Drag Single-arm lat pulldown from Full-body strength into calendar",
       }),
     );
     await user.click(
@@ -758,7 +758,7 @@ describe("actual exercises in calendar categories", () => {
       "bench",
       "lat",
     ]);
-    await user.click(screen.getByRole("button", { name: "Complete Strength" }));
+    await user.click(screen.getByRole("button", { name: "Complete Full-body strength" }));
     dialog = screen.getByRole("dialog");
     expect(
       within(dialog).queryByLabelText(
@@ -784,7 +784,7 @@ describe("actual exercises in calendar categories", () => {
     view.unmount();
     render(<App />);
     await user.click(
-      screen.getByRole("button", { name: /Strength.*Gym.*RPE 5/ }),
+      screen.getByRole("button", { name: /Full-body strength.*Gym.*RPE 5/ }),
     );
     expect(
       within(screen.getByRole("dialog")).queryByLabelText(
@@ -798,12 +798,12 @@ describe("actual exercises in calendar categories", () => {
     await user.click(screen.getByRole("tab", { name: "Strength" }));
     await user.click(
       screen.getByRole("button", {
-        name: "Drag Stretching from Strength into calendar",
+        name: "Drag Stretching & mobility from Full-body strength into calendar",
       }),
     );
     await user.click(screen.getByRole("button", { name: "Add to planner" }));
     await user.click(
-      screen.getByRole("button", { name: "Complete Stretching" }),
+      screen.getByRole("button", { name: "Complete Stretching & mobility" }),
     );
     expect(
       (
@@ -824,12 +824,12 @@ describe("actual exercises in calendar categories", () => {
     await user.click(screen.getByRole("tab", { name: "Strength" }));
     await user.click(
       screen.getByRole("button", {
-        name: "Drag Beastmaker 2000 slopers from Strength into calendar",
+        name: "Drag Beastmaker 2000 sloper hangs from Full-body strength into calendar",
       }),
     );
     await user.click(screen.getByRole("button", { name: "Add to planner" }));
     await user.click(
-      screen.getByRole("button", { name: "Complete Beastmaker 2000 slopers" }),
+      screen.getByRole("button", { name: "Complete Beastmaker 2000 sloper hangs" }),
     );
     await user.click(screen.getByRole("button", { name: "Save workout" }));
     expect(stored().logs[0].fingerLoad).toBe(true);
@@ -846,10 +846,10 @@ describe("actual exercises in calendar categories", () => {
     const user = userEvent.setup();
     render(<App />);
     await user.click(screen.getByRole("tab", { name: "Strength" }));
-    for (const name of ["Bench press", "Isolated one-arm lat pulldown"]) {
+    for (const name of ["Bench press", "Single-arm lat pulldown"]) {
       await user.click(
         screen.getByRole("button", {
-          name: `Drag ${name} from Strength into calendar`,
+          name: `Drag ${name} from Full-body strength into calendar`,
         }),
       );
       await user.click(screen.getByRole("button", { name: "Add to planner" }));

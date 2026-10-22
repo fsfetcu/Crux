@@ -82,7 +82,7 @@ describe("profiles and migration", () => {
     localStorage.setItem("crux-planner-v1", raw);
     const loaded = loadProfiles();
     expect(loaded.error).toBe("");
-    expect(loaded.data.profiles[0].state).toEqual(state);
+    expect(loaded.data.profiles[0].state).toEqual(firstProfile(state).profiles[0].state);
     expect(loaded.data.profiles[0].name).toContain("Oct 2026–Jan 2027");
     saveProfiles(loaded.data);
     expect(localStorage.getItem("crux-planner-v1")).toBe(raw);
@@ -105,7 +105,7 @@ describe("profiles and migration", () => {
     const original = firstProfile(state),
       next = createProfile(original, "Next season", true, now);
     const copy = next.profiles[1].state;
-    expect(copy.templates).toEqual(state.templates);
+    expect(copy.templates).toEqual(original.profiles[0].state.templates);
     expect(copy.logs).toEqual([]);
     expect(copy.plans).toEqual([]);
     expect(copy.checkins).toEqual({});

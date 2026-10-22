@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { ArrowRight, BookOpen, Check, Dumbbell, Mountain, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { useProfiles } from "./ProfileContext";
 import { Modal } from "./Modal";
+import { WorkoutBuilder } from "./WorkoutBuilder";
 import { catalogueFocus, addCatalogueToPlan, templateInPlan, removeTemplateFromPlan, parseCatalogue } from "./catalogue";
 import type { CatalogueItem, CatalogueFocus } from "./catalogue";
 import { intensityLabels, labelsFor, loadLabels, trainingTags, uid, workoutTypes } from "./model";
@@ -14,6 +15,7 @@ export function CataloguePage({ renderEditor, onViewPlan }: { renderEditor: (tem
   const [search,setSearch] = useState("");
   const [focus,setFocus] = useState("all");
   const [kind,setKind] = useState("all");
+  const [building,setBuilding] = useState(false);
   const [editing,setEditing] = useState<CatalogueItem | null>(null);
   const [adding,setAdding] = useState<CatalogueItem | null>(null);
   const [removing,setRemoving] = useState<CatalogueItem | null>(null);
@@ -25,7 +27,7 @@ export function CataloguePage({ renderEditor, onViewPlan }: { renderEditor: (tem
   const create = (kind: CatalogueItem["kind"]) => openEdit({id:uid(),name:"",category:"strength",location:"",description:"",exercises:kind === "exercise" ? [{id:uid(),name:"",sets:"3",reps:"10",rest:"90 s",fingerLoad:false}] : [],intensity:"moderate",loading:[],focus:"Other",kind});
   const shown = items.filter((item) => (focus === "all" || item.focus === focus) && (kind === "all" || item.kind === kind) && `${item.name} ${item.description} ${item.exercises.map((e) => e.name).join(" ")}`.toLowerCase().includes(search.toLowerCase()));
   return <>
-    <div className="page-heading"><div><div className="eyebrow">BUILD YOUR OWN WAY</div><h1>Your training catalogue<span className="accent">.</span></h1><p>A personal collection to reuse across your training plans.</p></div><div className="catalogue-create-actions"><button className="button" onClick={() => create("workout")}><Plus size={16}/>New workout</button><button className="button secondary" onClick={() => create("exercise")}><Plus size={16}/>New exercise</button></div></div>
+    <div className="page-heading"><div><div className="eyebrow">BUILD YOUR OWN WAY</div><h1>Your training catalogue<span className="accent">.</span></h1><p>A personal collection to reuse across your training plans.</p></div><div className="catalogue-create-actions"><button className="button" onClick={() => setBuilding(true)}><Dumbbell size={16}/>Build strength workout</button><button className="button secondary" onClick={() => create("workout")}><Plus size={16}/>New workout</button><button className="button secondary" onClick={() => create("exercise")}><Plus size={16}/>New exercise</button></div></div>
     <div className="catalogue-plan-banner"><BookOpen size={22}/><div><strong>Choose here. Train in your plan.</strong><p>Adding an item makes an independent copy. Its intensity and loading tags guide recovery recommendations in that plan.</p></div><button className="text-button" onClick={onViewPlan}>View training plan<ArrowRight size={16}/></button></div>
     <div className="catalogue-filters"><label className="catalogue-search"><Search size={17}/><input aria-label="Search catalogue" placeholder="Search workouts, exercises…" value={search} onChange={(e) => setSearch(e.target.value)}/></label><label><span className="sr-only">Catalogue focus</span><select aria-label="Catalogue focus" value={focus} onChange={(e) => setFocus(e.target.value)}><option value="all">All training goals</option>{catalogueFocus.map((f) => <option key={f}>{f}</option>)}</select></label><label><span className="sr-only">Catalogue item type</span><select aria-label="Catalogue item type" value={kind} onChange={(e) => setKind(e.target.value)}><option value="all">Workouts & exercises</option><option value="workout">Workouts</option><option value="exercise">Exercises</option></select></label></div>
     <p className="small muted catalogue-count">{shown.length} item{shown.length === 1 ? "" : "s"} · Adding to {profiles.active.name}</p>
@@ -40,6 +42,7 @@ export function CataloguePage({ renderEditor, onViewPlan }: { renderEditor: (tem
       </article>;
     })}</div>
     {!shown.length && <div className="panel empty-state"><BookOpen size={32}/><h2>No matching items</h2><p>Adjust the filters or create a workout or exercise of your own.</p><button className="button" onClick={() => create("workout")}>Create a workout</button></div>}
+    {building&&<WorkoutBuilder items={items} onClose={()=>setBuilding(false)} onSave={(item,addToPlan)=>{try{const catalogue=parseCatalogue([...items,item]);if(profiles.persist({...profiles.data,catalogue})){setBuilding(false);setSearch(item.name);setFocus("all");setKind("all");if(addToPlan)setAdding(item);profiles.setNotice("Workout saved to your catalogue. Add it to a training plan, then drag the whole workout into a day.");}}catch(error){profiles.setNotice(error instanceof Error?error.message:"Could not save workout.");}}}/> }
     {editing && <Modal title={items.some((i) => i.id === editing.id) ? "Edit catalogue item" : "Create catalogue item"} onClose={() => setEditing(null)} wide><div className="form-stack catalogue-editor-metadata"><p className="small muted">Saved to your personal catalogue. Add it to a training plan when ready; existing plan copies and logs won’t change.</p><div className="form-grid"><label>Training focus<select value={editorFocus} onChange={(e) => setEditorFocus(e.target.value as CatalogueFocus)}>{catalogueFocus.map((f) => <option key={f}>{f}</option>)}</select></label><label>Item type<select value={editorKind} onChange={(e) => setEditorKind(e.target.value as CatalogueItem["kind"])}><option value="workout">Workout / routine</option><option value="exercise">Individual exercise</option></select></label></div>{editorError && <p className="warning" role="alert">{editorError}</p>}</div>{renderEditor(editing,(t) => {
       const item: CatalogueItem = {...editing,...t,focus:editorFocus,kind:editorKind};
       if (editorKind === "exercise" && item.exercises.length !== 1) {setEditorError("An individual exercise needs exactly one exercise row. Choose Workout / routine for several exercises.");return;}

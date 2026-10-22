@@ -33,6 +33,7 @@ import {
   Sparkles,
   X,
   BookOpen,
+  Search,
 } from "lucide-react";
 import {
   fromDay,
@@ -292,6 +293,7 @@ function LibraryBubble({
             : categoryLabels[template.category]}
           {exercise && exercise.rest ? ` · ${exercise.rest} rest` : ""}
           {exercise?.weightKg !== undefined ? ` · ${exercise.weightKg} kg` : ""}
+          {!exercise && template.exercises.length > 0 ? ` · All ${template.exercises.length} exercises` : ""}
         </small>
         {exercise && (
           <span className="exercise-effort">
@@ -325,12 +327,13 @@ export function SessionShelf({
 }) {
   const categoryLabels = useTypeLabels();
   const { active } = useDndContext();
+  const [search,setSearch] = useState("");
   const categories = [...new Set([...types.map((t) => t.id), ...templates.map((t) => t.category)])].sort(
     (a, b) => (a === "rest" ? 1 : b === "rest" ? -1 : 0),
   );
   const selected = category && categories.includes(category) ? category : categories[0];
   const id = useId();
-  const shown = templates.filter((t) => t.category === selected);
+  const shown = templates.filter((t) => t.category === selected && `${t.name} ${t.location} ${t.exercises.map((e)=>e.name).join(" ")}`.toLowerCase().includes(search.trim().toLowerCase()));
   return (
     <section
       className={`session-shelf ${active ? "drag-in-progress" : ""}`}
@@ -386,13 +389,14 @@ export function SessionShelf({
         <Plus size={14} /> Add workout type
       </button>
       </div>
+      <label className="catalogue-search shelf-search"><Search size={17}/><input aria-label="Search workouts in this plan" placeholder="Search this category’s workouts and exercises…" value={search} onChange={(e)=>setSearch(e.target.value)}/></label>
       <div
         role="tabpanel"
         id={`${id}-panel`}
         aria-labelledby={`${id}-tab-${selected}`}
         className="category-activities"
       >
-        {!shown.length && <p className="shelf-empty">Add your first {categoryLabels[selected] ?? ""} workout, then drag it into your week.</p>}
+        {!shown.length && <p className="shelf-empty">{search ? "No matching workouts in this category. Try another search or category." : `Add your first ${categoryLabels[selected] ?? ""} workout, then drag it into your week.`}</p>}
         {shown.some((t) => !t.exercises.length) && (
           <div className="workout-shelf">
             {shown
@@ -418,6 +422,7 @@ export function SessionShelf({
                   Plan full routine
                 </button>
               </div>
+              <div className="whole-routine-bubble"><LibraryBubble template={t} onChoose={()=>onChoose(t.id)}/></div>
               <div className="workout-shelf">
                 {t.exercises.map((exercise) => (
                   <LibraryBubble

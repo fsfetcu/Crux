@@ -16,7 +16,7 @@ beforeAll(async () => {
     create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
     grant usage on schema auth,public to anon,authenticated;
     grant execute on function auth.uid() to anon,authenticated;`);
-  for (const file of ["202610220001_accounts.sql", "202610220002_google_friends.sql", "202610220003_calendar_subscriptions.sql", "202610220004_calendar_weights.sql", "202610220005_preserve_catalogue.sql"])
+  for (const file of ["202610220001_accounts.sql", "202610220002_google_friends.sql", "202610220003_calendar_subscriptions.sql", "202610220004_calendar_weights.sql", "202610220005_preserve_catalogue.sql", "202610220006_catalogue_revision.sql"])
     await db.exec(readFileSync(new URL(`../supabase/migrations/${file}`,import.meta.url),"utf8"));
 },30000);
 afterAll(async () => { await db?.close(); });
@@ -39,12 +39,14 @@ const load = (id=A) => db.query("select * from public.load_planner($1::uuid)",[i
 describe("private Google account access",() => {
   it("preserves a catalogue on older client saves and accepts an explicit empty catalogue", async () => {
     await asUser(A);
-    const current = {...JSON.parse(document), catalogue: [{id:"private-example", name:"My exercise"}]};
+    const current = {...JSON.parse(document), catalogue: [{id:"private-example", name:"My exercise"}],catalogueRevision:1};
     await db.query("select * from public.save_planner($1,0,$2)", [A, JSON.stringify(current)]);
-    const legacy = (await db.query<{data:{catalogue:unknown[]}}>("select * from public.save_planner($1,1,$2)", [A, document])).rows[0];
+    const legacy = (await db.query<{data:{catalogue:unknown[];catalogueRevision:number}}>("select * from public.save_planner($1,1,$2)", [A, document])).rows[0];
     expect(legacy.data.catalogue).toEqual(current.catalogue);
-    const cleared = (await db.query<{data:{catalogue:unknown[]}}>("select * from public.save_planner($1,2,$2)", [A, JSON.stringify({...current,catalogue:[]})])).rows[0];
+    expect(legacy.data.catalogueRevision).toBe(1);
+    const cleared = (await db.query<{data:{catalogue:unknown[];catalogueRevision:number}}>("select * from public.save_planner($1,2,$2)", [A, JSON.stringify({...JSON.parse(document),catalogue:[]})])).rows[0];
     expect(cleared.data.catalogue).toEqual([]);
+    expect(cleared.data.catalogueRevision).toBe(1);
     await expect(save(A,1)).rejects.toThrow(/newer planner/);
   });
   it("runs the calendar deployment verification and rolls back its fictional records", async () => {

@@ -7,7 +7,7 @@ import {
 } from "./model";
 import type { State } from "./model";
 import { parseBackup } from "./storage";
-import { initialCatalogue, parseCatalogue } from "./catalogue";
+import { upgradeCatalogue, parseCatalogue } from "./catalogue";
 import type { CatalogueItem } from "./catalogue";
 export interface TrainingProfile {
   id: string;
@@ -19,6 +19,7 @@ export interface ProfileData {
   activeProfileId: string;
   profiles: TrainingProfile[];
   catalogue?: CatalogueItem[];
+  catalogueRevision?: number;
 }
 export const PROFILE_KEY = "crux-planner-profiles-v2";
 export function firstProfile(state: State): ProfileData {
@@ -27,7 +28,7 @@ export function firstProfile(state: State): ProfileData {
     name: `Climbing · ${new Date(state.settings.periodStart + "T12:00:00").toLocaleDateString("en-GB", { month: "short", year: "numeric" })}–${new Date(state.settings.periodEnd + "T12:00:00").toLocaleDateString("en-GB", { month: "short", year: "numeric" })}`,
     state,
   };
-  return { version: 2, activeProfileId: profile.id, profiles: [profile], catalogue: initialCatalogue([profile]) };
+  return upgradeCatalogue({ version: 2, activeProfileId: profile.id, profiles: [profile] });
 }
 export function parseProfileBackup(raw: string): ProfileData {
   if (raw.length > 10000000) throw Error("Backup exceeds 10 MB.");
@@ -70,7 +71,8 @@ export function parseProfileBackup(raw: string): ProfileData {
     !profiles.some((p: TrainingProfile) => p.id === data.activeProfileId)
   )
     throw Error("Profile IDs are invalid. Your data has not changed.");
-  return { version: 2, activeProfileId: data.activeProfileId, profiles, catalogue: data.catalogue === undefined ? initialCatalogue(profiles) : parseCatalogue(data.catalogue) };
+  if(data.catalogueRevision !== undefined && (!Number.isInteger(data.catalogueRevision) || data.catalogueRevision<0 || data.catalogueRevision>1000)) throw Error("Catalogue revision is invalid.");
+  return upgradeCatalogue({ version: 2, activeProfileId: data.activeProfileId, profiles, catalogue: data.catalogue === undefined ? undefined : parseCatalogue(data.catalogue),catalogueRevision:data.catalogue === undefined ? undefined : data.catalogueRevision });
 }
 export function loadProfiles(): { data: ProfileData; error: string } {
   try {

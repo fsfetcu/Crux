@@ -21,7 +21,7 @@ describe("reusable personal catalogue",()=>{
   });
   it("copies selected exercises independently into the chosen profile and rejects duplicates",()=>{
     const original=createProfile(firstProfile(initialState()),"New plan");
-    const item=original.catalogue!.find((i)=>i.name==="Strength")!;
+    const item=original.catalogue!.find((i)=>i.name==="Full-body strength")!;
     item.exercises[0].weightKg=22.5;
     const added=addCatalogueToPlan(original,item,original.activeProfileId,"",{name:"Gym work",target:1},[item.exercises[0].id]);
     const profile=added.profiles[1],copy=templateInPlan(item,profile)!;
@@ -58,7 +58,7 @@ describe("reusable personal catalogue",()=>{
   });
   it("preserves original exercise loading defaults when a routine gets a new ID, and can remove the last legacy workout of a type",()=>{
     const data=createProfile(firstProfile(initialState()),"Strength plan");
-    const item=data.catalogue!.find((i)=>i.name==="Strength")!;
+    const item=data.catalogue!.find((i)=>i.name==="Full-body strength")!;
     const bench=item.exercises.find((e)=>e.id==="bench")!;
     const next=addCatalogueToPlan(data,item,data.activeProfileId,"",{name:"Gym",target:1},[bench.id]);
     const added=templateInPlan(item,next.profiles[1])!;

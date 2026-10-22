@@ -66,3 +66,5 @@ Email/password signup and password-reset delivery require custom SMTP. Until the
 ### Catalogue compatibility
 
 Apply `supabase/migrations/202610220005_preserve_catalogue.sql` after the account migrations. It preserves an existing personal catalogue when an older cached app saves a document without that new root field. New clients send the field explicitly, including an empty array when clearing it. Ownership checks, row security and revision conflict checks remain unchanged. Refresh every device to use the new catalogue, grade-count and kilogram controls.
+
+Apply `supabase/migrations/202610220006_catalogue_revision.sql` for the strength-workout builder release. It also preserves `catalogueRevision` when an older client omits it, so deleted starter items are not restored by repeating a completed one-time catalogue upgrade. This keeps the same owner, approved-account, row-security and revision-conflict checks.

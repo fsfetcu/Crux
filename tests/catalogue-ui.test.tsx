@@ -9,6 +9,48 @@ const saved=()=>JSON.parse(localStorage.getItem(PROFILE_KEY)!) as ProfileData;
 beforeEach(()=>{localStorage.clear();window.scrollTo=vi.fn();});
 afterEach(()=>{cleanup();vi.restoreAllMocks();});
 describe("catalogue and training log flows",()=>{
+  it("searches and selects catalogue exercises, saves a composed strength workout and schedules it together",async()=>{
+    const user=userEvent.setup();let view=render(<App/>);
+    await user.click(screen.getByRole("button",{name:"Catalogue"}));
+    await user.click(screen.getByRole("button",{name:"Build strength workout"}));
+    let dialog=screen.getByRole("dialog");
+    await user.type(within(dialog).getByLabelText("Workout name"),"My pull and push");
+    const search=within(dialog).getByRole("textbox",{name:"Search exercises to build workout"});
+    await user.type(search,"pull");
+    expect(within(dialog).queryByRole("checkbox",{name:"Include Bench press"})).toBeNull();
+    await user.click(within(dialog).getByRole("checkbox",{name:"Include Weighted pull-ups"}));
+    await user.clear(search);await user.type(search,"bench");
+    await user.click(within(dialog).getByRole("checkbox",{name:"Include Bench press"}));
+    for(const [name,value] of [["Weighted pull-ups sets","5"],["Weighted pull-ups reps","3"],["Weighted pull-ups rest","3 min"],["Weighted pull-ups kilograms","12.5"],["Bench press kilograms","60"]]) {
+      const input=within(dialog).getByLabelText(name);await user.clear(input);await user.type(input,value);
+    }
+    await user.selectOptions(within(dialog).getByLabelText("Weighted pull-ups effort"),"hard");
+    await user.click(within(dialog).getByRole("button",{name:"Move Bench press up"}));
+    await user.click(within(dialog).getByRole("button",{name:"Save & add to plan"}));
+    dialog=screen.getByRole("dialog");
+    await user.click(within(dialog).getByRole("button",{name:"Add to plan"}));
+    const routine=saved().catalogue!.find((i)=>i.name==="My pull and push")!;
+    expect(routine.exercises.map((e)=>e.name)).toEqual(["Bench press","Weighted pull-ups"]);
+    expect(routine.exercises[1]).toMatchObject({sets:"5",reps:"3",rest:"3 min",weightKg:12.5});
+    expect(saved().catalogue!.find((i)=>i.name==="Weighted pull-ups")!.exercises[0].weightKg).toBeUndefined();
+    await user.click(screen.getByRole("button",{name:"Training plan"}));
+    await user.click(screen.getByRole("tab",{name:"Strength"}));
+    await user.type(screen.getByRole("textbox",{name:"Search workouts in this plan"}),"My pull and push");
+    expect(screen.queryByRole("button",{name:"Drag Full-body strength into calendar"})).toBeNull();
+    const bubble=screen.getByRole("button",{name:"Drag My pull and push into calendar"});
+    expect(bubble.getAttribute("aria-roledescription")).toBe("draggable");
+    await user.click(bubble);
+    await user.click(within(screen.getByRole("dialog")).getByRole("button",{name:"Add to planner"}));
+    expect(saved().profiles[0].state.plans).toHaveLength(1);
+    view.unmount();view=render(<App/>);
+    await user.click(screen.getByRole("button",{name:"Complete My pull and push"}));
+    dialog=screen.getByRole("dialog");
+    expect((within(dialog).getByLabelText("Weighted pull-ups kilograms") as HTMLInputElement).value).toBe("12.5");
+    await user.click(within(dialog).getByRole("button",{name:"Save workout"}));
+    const log=saved().profiles[0].state.logs[0];
+    expect(log.exercises).toHaveLength(2);expect(log.fingerLoad).toBe(true);
+    expect(log.exercises.find((e)=>e.name==="Weighted pull-ups")!.weightKg).toBe(12.5);
+  });
   it("creates a weighted exercise, adds it to a plan, overrides the day, logs grades/weights, and reopens its statistics",async()=>{
     const user=userEvent.setup();let view=render(<App/>);
     await user.click(screen.getByRole("button",{name:"Catalogue"}));

@@ -42,7 +42,7 @@ describe("private profile subscriptions", () => {
     const result = await feed();
     expect(result).toMatchObject({ profileId: profile.id, events: [
       { id: "one", name: "Daily exercise", exercises: [{ name: "Daily exercise", sets: "9", reps: "4", rest: "200 sec" }] },
-      { id: "two", name: "Kilter" },
+      { id: "two", name: "Kilter projecting" },
     ] });
     expect(JSON.stringify(result)).not.toMatch(/PRIVATE|finger|checkin|notes|rpe|@example|approved|token/);
     await expect(db.query("select * from crux_private.calendar_subscriptions")).rejects.toThrow(/permission denied/);
