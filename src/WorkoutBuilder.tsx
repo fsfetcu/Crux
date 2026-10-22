@@ -21,6 +21,7 @@ export function WorkoutBuilder({items,onClose,onSave}:{items:CatalogueItem[];onC
     <form className="form-stack workout-builder" onSubmit={(e)=>{e.preventDefault();save(true);}}>
       <p className="muted small">Choose catalogue exercises, then set their details for this workout. Your individual catalogue exercises keep their original defaults.</p>
       <div className="form-grid"><label>Workout name<input required maxLength={120} placeholder="e.g. Pull & push strength" value={name} onChange={(e)=>setName(e.target.value)}/></label><label>Location<input maxLength={200} value={location} onChange={(e)=>setLocation(e.target.value)}/></label></div>
+      {selected.length>0&&<div className="builder-selection-summary" aria-label="Your workout selection"><strong>Your workout · {selected.length} exercises</strong><div>{selected.map(({catalogueId,exercise})=><button key={catalogueId} type="button" aria-label={`Deselect ${exercise.name}`} onClick={()=>setSelected((rows)=>rows.filter((r)=>r.catalogueId!==catalogueId))}>{exercise.name}<X size={12}/></button>)}</div></div>}
       <section className="builder-picker" aria-label="Choose catalogue exercises">
         <div className="builder-section-title"><h3>1. Choose exercises</h3><span>{selected.length} selected</span></div>
         <label className="catalogue-search"><Search size={17}/><input aria-label="Search exercises to build workout" placeholder="Search exercises…" value={search} onChange={(e)=>setSearch(e.target.value)}/></label>

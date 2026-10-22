@@ -33,7 +33,7 @@ describe("catalogue and training log flows",()=>{
     expect(routine.exercises.map((e)=>e.name)).toEqual(["Bench press","Weighted pull-ups"]);
     expect(routine.exercises[1]).toMatchObject({sets:"5",reps:"3",rest:"3 min",weightKg:12.5});
     expect(saved().catalogue!.find((i)=>i.name==="Weighted pull-ups")!.exercises[0].weightKg).toBeUndefined();
-    await user.click(screen.getByRole("button",{name:"Training plan"}));
+    await user.click(screen.getByRole("button",{name:"Plan"}));
     await user.click(screen.getByRole("tab",{name:"Strength"}));
     await user.type(screen.getByRole("textbox",{name:"Search workouts in this plan"}),"My pull and push");
     expect(screen.queryByRole("button",{name:"Drag Full-body strength into calendar"})).toBeNull();
@@ -66,7 +66,7 @@ describe("catalogue and training log flows",()=>{
     dialog=screen.getByRole("dialog");
     await user.selectOptions(within(dialog).getByLabelText("Workout type in this plan"),"strength");
     await user.click(within(dialog).getByRole("button",{name:"Add to plan"}));
-    await user.click(screen.getByRole("button",{name:"Training plan"}));
+    await user.click(screen.getByRole("button",{name:"Plan"}));
     await user.click(screen.getByRole("tab",{name:"Strength"}));
     await user.click(screen.getByRole("button",{name:"Drag Weighted row from Weighted row into calendar"}));
     dialog=screen.getByRole("dialog");
@@ -84,7 +84,7 @@ describe("catalogue and training log flows",()=>{
     expect(saved().profiles[0].state.logs[0]).toMatchObject({gradeCounts:[{system:"font",grade:"6A",count:5}],exercises:[{weightKg:27.5}]});
     expect(saved().profiles[0].state.templates.find((t)=>t.name==="Weighted row")!.exercises[0].weightKg).toBe(22.5);
     view.unmount();view=render(<App/>);
-    await user.click(screen.getByRole("button",{name:"Training history"}));
+    await user.click(screen.getByRole("button",{name:"Progress"}));
     expect(screen.getByRole("heading",{name:"Grades you’ve climbed"})).toBeTruthy();
     const table=screen.getByRole("table");expect(within(table).getByRole("rowheader",{name:"6A"})).toBeTruthy();
     expect(within(table).getByText("5",{exact:true})).toBeTruthy();

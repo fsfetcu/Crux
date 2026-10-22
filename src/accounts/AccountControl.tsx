@@ -12,7 +12,7 @@ export const syncLabels = {
   loading: "Loading account…",
   syncing: "Saving online…",
   saved: "Saved online",
-  pending: "Saved here · sync pending",
+  pending: "Saved on this phone · waiting to sync",
   conflict: "Review online changes",
   error: "Online saving unavailable",
 };

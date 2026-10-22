@@ -1,0 +1,195 @@
+/* A quieter Today screen and touch-friendly controls, using Crux's existing palette. */
+:root { --muted:#65715f; }
+.muted, .catalogue-description { color:#65715f; }
+label { color:#465342; }
+.button { min-height:44px; }
+.icon-button { min-width:40px; min-height:40px; }
+.page-heading > div > p { color:#63705e; }
+.app-status-row { display:flex; justify-content:space-between; align-items:center; gap:12px; margin:-8px 0 24px; font-size:12px; }
+.save-indicator { display:inline-flex; align-items:center; gap:7px; color:#52694a; }
+.save-indicator.offline, .save-indicator.pending { color:#856132; }
+.update-pill, .update-check { display:inline-flex; align-items:center; gap:6px; padding:8px 10px; border:0; background:transparent; color:#63775a; border-radius:20px; font:inherit; font-size:12px; cursor:pointer; }
+.update-pill { background:#e9f0df; color:#334b2b; font-weight:600; }
+.update-message { margin:-12px 0 20px; color:#64715c; }
+.resume-workout { display:flex; justify-content:space-between; align-items:center; gap:12px; border:1px solid #bbcca9; background:#edf3e5; border-radius:20px; padding:18px 20px; margin-bottom:24px; }
+.resume-workout strong, .resume-workout span { display:block; }
+.resume-workout span { margin-top:5px; color:#65765b; font-size:12px; }
+.profile-menu-actions { display:grid; gap:12px; }
+.bottom-navigation { display:none; }
+.rec-start { margin-bottom:14px; }
+.rec-start .button { padding:13px 21px; }
+.recommendation .rec-bottom .button { background:transparent; border:1px solid #ffffff50; color:inherit; min-height:38px; padding:9px 13px; }
+.today-sessions { margin:24px 0; }
+.today-session-list { padding:0 22px 22px; display:grid; gap:12px; }
+.today-session-card { display:flex; align-items:center; gap:14px; padding:18px; background:#f5f7f0; border:1px solid #e1e7d9; border-radius:20px; }
+.today-session-card > div:nth-child(2) { flex:1; min-width:0; }
+.today-session-card h3 { margin:0; font-size:17px; font-weight:550; overflow-wrap:anywhere; }
+.today-session-card p { margin:6px 0 0; font-size:12px; color:#65715f; }
+.today-session-actions { display:flex; align-items:center; gap:7px; }
+.today-empty { display:flex; align-items:center; gap:16px; padding:14px 0; }
+.today-empty > div { flex:1; }
+.today-empty strong { font-weight:500; }
+.today-empty p { color:#65715f; font-size:13px; line-height:1.6; margin:7px 0; }
+.today-grid .checkin { padding:26px; }
+.today-grid .checkin h2 { font-size:25px; margin-bottom:8px; }
+.today-grid .checkin > p { margin-bottom:18px; }
+.today-grid .checkin fieldset { margin-bottom:17px; }
+.today-grid .choice { min-height:43px; }
+.today-grid .recommendation { min-height:0; }
+.dashboard-bottom { margin-top:24px; }
+.phone-week-strip { display:none; }
+.routine-heading-actions { display:flex; flex-wrap:wrap; gap:14px; justify-content:flex-end; }
+.routine-heading-actions button { display:inline-flex; align-items:center; gap:5px; min-height:36px; }
+.whole-routine-bubble .workout-bubble { box-shadow:0 3px 0 #dce5d1; }
+.workout-bubble { transition:transform .18s cubic-bezier(.2,.8,.2,1),box-shadow .18s,border-color .18s; }
+.workout-bubble:hover { transform:translateY(-2px); box-shadow:0 7px 17px #344a2b12; }
+.workout-bubble:active { transform:scale(.98); }
+.calendar-day.drop-target { border-color:#829b67; box-shadow:0 0 0 3px #d7e5c4; }
+.toast .toast-undo { font:inherit; font-weight:600; text-decoration:underline; min-width:48px; }
+.catalogue-card.exercise-item { padding:18px 22px; gap:11px; border-radius:16px; background:#fcfdf9; }
+.catalogue-card.workout-item { border-radius:24px; box-shadow:0 4px 0 #edf0e7; }
+.catalogue-item-count { color:#667957; font-size:12px; display:flex; align-items:center; gap:6px; }
+.catalogue-card.exercise-item h2 { font-size:18px; }
+.catalogue-card.exercise-item .catalogue-description { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.builder-selection-summary { position:sticky; top:-1px; z-index:2; background:#eef3e6; border:1px solid #d6e1c9; padding:13px 15px; border-radius:16px; }
+.builder-selection-summary strong { display:block; font-size:13px; margin-bottom:7px; }
+.builder-selection-summary > div { display:flex; gap:6px; flex-wrap:wrap; }
+.builder-selection-summary button { display:flex; align-items:center; gap:7px; padding:7px 9px; background:white; border:1px solid #d6e1c9; border-radius:20px; color:#506846; font-size:11px; cursor:pointer; }
+.workout-runner { display:grid; gap:20px; }
+.runner-summary { border:1px solid #dce5cf; background:#f3f6eb; padding:18px; border-radius:20px; }
+.runner-summary > strong { float:right; font-size:20px; }
+.runner-summary p { margin:9px 0 0; font-size:13px; color:#63735b; }
+.runner-timer { display:flex; gap:13px; align-items:center; position:sticky; top:0; z-index:2; background:#eef3e6; border:1px solid #ceddc0; border-radius:20px; padding:16px; }
+.runner-timer > div { flex:1; }
+.runner-timer > div > span { display:block; color:#63725c; font-size:12px; }
+.runner-timer strong { display:block; margin-top:4px; font-size:25px; font-variant-numeric:tabular-nums; }
+.runner-timer label { width:75px; text-align:center; }
+.runner-timer input { width:100%; min-width:0; font-size:16px; text-align:center; }
+.runner-timer small { font-size:10px; margin-top:3px; }
+.runner-exercise { padding:20px; border:1px solid #e0e7d8; border-radius:24px; }
+.runner-exercise-heading h3 { margin:0 0 8px; font-size:20px; font-weight:550; }
+.runner-exercise-heading > span { display:block; color:#65715e; font-size:13px; line-height:1.6; }
+.runner-exercise .weight-field { max-width:190px; margin:16px 0; }
+.runner-exercise input { font-size:17px; }
+.runner-sets { display:flex; gap:9px; flex-wrap:wrap; }
+.set-toggle { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; min-width:66px; min-height:70px; border:1px solid #c9d5bd; border-radius:20px; background:#f7f9f2; color:#5a7050; font-size:19px; cursor:pointer; transition:background .15s,transform .15s; }
+.set-toggle span { font-size:10px; }
+.set-toggle.done { background:#435e3a; color:white; border-color:#435e3a; }
+.set-toggle:active { transform:scale(.95); }
+.spinning { animation:spin .9s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+@media(max-width:650px) {
+  .main-content { padding-bottom:110px; }
+  .topbar .mobile-menu, .topbar .account-button { display:none; }
+  .topbar { gap:10px; padding-left:18px; padding-right:18px; }
+  .topbar-right { width:100%; justify-content:space-between; gap:8px; }
+  .topbar .active-profile-pill { max-width:calc(100% - 58px); }
+  .profile-menu-toggle { flex-shrink:0; }
+  .bottom-navigation { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); position:fixed; bottom:0; left:0; right:0; z-index:55; border-top:1px solid #dce3d4; background:#fcfdf9f5; backdrop-filter:blur(16px); padding:8px 8px calc(8px + env(safe-area-inset-bottom)); box-shadow:0 -5px 20px #40533306; }
+  .bottom-navigation button { border:0; background:transparent; color:#75806e; min-height:48px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; border-radius:16px; font:inherit; font-size:11px; cursor:pointer; }
+  .bottom-navigation button.active { background:#e9f0df; color:#38522e; font-weight:600; }
+  .app-status-row { font-size:11px; gap:6px; margin-top:0; margin-bottom:20px; }
+  .update-check, .update-pill { font-size:10px; padding:7px 5px; }
+  .app-status-row .save-indicator { max-width:58%; line-height:1.5; }
+  .page-heading h1 { font-size:32px; line-height:1.15; }
+  .page-heading { gap:14px; margin-bottom:22px; }
+  .page-heading > div > p { font-size:13px; line-height:1.7; }
+  .today-grid { gap:16px; margin-bottom:26px; }
+  .today-grid .checkin { padding:21px; }
+  .today-grid .checkin h2 { font-size:24px; }
+  .today-grid .choice-row { gap:6px; }
+  .today-grid .choice { padding:9px 7px; font-size:12px; line-height:1.5; }
+  .today-grid .recommendation { padding:22px; border-radius:24px; }
+  .today-grid .recommendation h2 { font-size:28px; line-height:1.2; }
+  .today-grid .rec-reason { font-size:14px; line-height:1.75; }
+  .progress-grid { gap:10px; }
+  .progress-card { border-radius:19px; }
+  .today-session-list { padding:0 17px 17px; }
+  .today-session-card { flex-wrap:wrap; padding:16px; }
+  .today-session-card > svg { width:20px; }
+  .today-session-card > div:nth-child(2) { flex-basis:calc(100% - 40px); }
+  .today-session-actions { width:100%; justify-content:flex-end; }
+  .today-session-actions .button { margin-right:auto; }
+  .today-empty { flex-wrap:wrap; }
+  .today-empty > div { min-width:160px; }
+  .today-empty > button { margin-left:40px; }
+  .resume-workout { flex-wrap:wrap; padding:16px; }
+  .resume-workout > button { width:100%; justify-content:center; }
+  .dashboard-bottom { gap:18px; }
+  .dashboard-bottom .panel:first-child { display:none; }
+  .phone-week-strip { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:3px; padding:0 12px 14px; }
+  .phone-date-tab { display:flex; flex-direction:column; align-items:center; gap:6px; padding:10px 1px; min-width:0; border:1px solid transparent; border-radius:16px; background:transparent; color:#68795e; cursor:pointer; }
+  .phone-date-tab > span { font-size:10px; }
+  .phone-date-tab > strong { font-size:18px; }
+  .phone-date-tab > small { font-size:8px; min-height:10px; }
+  .phone-date-tab.selected { background:#425d38; color:#fff; }
+  .phone-date-tab.drop-target { border-color:#739853; background:#e0edcd; color:#38522d; box-shadow:0 0 0 2px #b7cda0; }
+  .calendar-panel .calendar-grid { display:block; padding:0 14px 14px; }
+  .calendar-panel .calendar-day { display:none; }
+  .calendar-panel .calendar-day.selected-day { display:flex; min-height:190px; border-radius:21px; padding:17px; background:#fafcf6; }
+  .dragging-workout .calendar-panel .calendar-day { display:flex; margin-bottom:8px; min-height:110px; }
+  .calendar-panel .calendar-session { font-size:14px; padding:13px; border-radius:16px; }
+  .calendar-panel .planned-exercise { padding:11px; }
+  .calendar-panel .planned-exercise strong { font-size:13px; }
+  .calendar-panel .planned-exercise small { font-size:11px; }
+  .calendar-tools { flex-wrap:wrap; }
+  .routine-heading { align-items:flex-start; }
+  .routine-heading-actions { gap:4px; flex-direction:column; align-items:flex-end; }
+  .routine-heading-actions .text-button { font-size:11px; }
+  .catalogue-card-actions .button { min-height:44px; }
+  .catalogue-card .catalogue-description { font-size:13px; }
+  .modal-backdrop { align-items:flex-end; padding:0; }
+  .modal, .modal.wide { width:100%; max-width:100%; max-height:calc(100dvh - 16px); margin:0; border-radius:25px 25px 0 0; padding:22px 20px calc(24px + env(safe-area-inset-bottom)); }
+  .modal-head h2 { font-size:23px; line-height:1.3; }
+  .modal .form-stack label, .runner-exercise label { font-size:13px; }
+  .modal input, .modal textarea, .modal select { font-size:16px; }
+  .modal .icon-button { min-height:42px; min-width:42px; }
+  .runner-exercise { padding:17px; }
+  .runner-timer { padding:12px; gap:9px; }
+  .runner-timer strong { font-size:23px; }
+  .runner-timer label { width:63px; }
+  .runner-summary .eyebrow { font-size:9px; }
+  .workout-runner .modal-actions { flex-wrap:wrap; }
+  .workout-runner .modal-actions button { flex:1; justify-content:center; }
+  .toast, .profile-toast { bottom:calc(90px + env(safe-area-inset-bottom)); max-width:calc(100% - 30px); }
+}
+@media(prefers-reduced-motion:reduce) {
+  .workout-bubble, .set-toggle { transition:none!important; }
+  .workout-bubble:hover, .workout-bubble:active, .set-toggle:active { transform:none; }
+  .spinning { animation:none; }
+}
+.today-grid.checked-in { grid-template-columns:minmax(0,1fr); }
+.today-grid .checkin-collapsed { display:flex; justify-content:space-between; align-items:center; gap:15px; padding:20px 24px; border-radius:20px; }
+.today-grid .checkin-collapsed h2 { margin:9px 0; font-size:20px; }
+.today-grid .checkin-collapsed p { margin:0; font-size:12px; }
+.checkin-pain { color:#a44535; }
+.checked-in .recommendation .recommendation-middle { max-width:700px; }
+@media(max-width:650px) {
+  .today-grid .checkin-collapsed { padding:19px; gap:10px; }
+  .today-grid .checkin-collapsed h2 { font-size:18px; }
+  .checkin-collapsed > .text-button { white-space:nowrap; font-size:11px; }
+}
+.shelf-workout-choice { display:flex; flex-direction:column; gap:8px; min-width:0; }
+.shelf-workout-choice > .workout-bubble { width:100%; flex:1; }
+.shelf-workout-choice > .text-button { justify-content:flex-start; min-height:36px; padding-left:12px; font-size:12px; }
+@media(max-width:650px) {
+  .plan-page { display:flex; flex-direction:column; }
+  .plan-page > .page-heading { order:0; }
+  .plan-page > .calendar-panel { order:1; margin-bottom:20px; }
+  .plan-page > .session-shelf { order:2; }
+  .plan-page > .section-title { order:3; margin-top:22px; }
+  .plan-page > .progress-grid { order:4; }
+  .plan-page > .planner-notes, .plan-page > .panel:last-child { order:5; margin-top:20px; }
+}
+.today-grid { border:0; border-radius:0; background:transparent; overflow:visible; gap:18px; }
+.today-grid .checkin { background:white; border:1px solid #dfe5d7; border-radius:24px; }
+.today-grid .choice { color:#5a6851; }
+.today-grid .checkin-collapsed .eyebrow { margin-bottom:0; }
+@media(max-width:650px) {
+  .today-heading { flex-direction:row; align-items:center; justify-content:space-between; margin-bottom:20px; }
+  .today-heading .eyebrow, .today-heading p { display:none; }
+  .today-heading h1 { margin:0; }
+  .today-heading > .button { flex-shrink:0; }
+  .today-grid .checkin-collapsed { border-radius:20px; }
+}
+.runner-actions { position:sticky; bottom:-24px; z-index:3; background:#fff; padding:14px 0; border-top:1px solid #e0e7d8; margin-top:0; }

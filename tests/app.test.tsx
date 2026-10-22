@@ -40,6 +40,7 @@ describe("working application flows", () => {
   it("lets a tapped workout bubble open a plan with the chosen specific session", async () => {
     const user = userEvent.setup();
     render(<App />);
+    await user.click(screen.getByRole("button", { name: "Plan" }));
     await user.click(
       screen.getByRole("button", { name: "Drag Spray wall projecting into calendar" }),
     );
@@ -83,7 +84,7 @@ describe("working application flows", () => {
       }),
     );
     expect(stored().logs).toHaveLength(1);
-    expect(screen.getByText("Offline · saved on this device")).toBeTruthy();
+    expect(screen.getByText("Offline · saved on this phone")).toBeTruthy();
   });
 
   it("remembers a daily check-in and makes discomfort override training", async () => {
@@ -132,7 +133,7 @@ describe("working application flows", () => {
       ),
     ).toBeNull();
     expect(stored().logs).toHaveLength(1);
-    await user.click(screen.getByRole("button", { name: "Training history" }));
+    await user.click(screen.getByRole("button", { name: "Progress" }));
     expect(screen.getByText("Training log")).toBeTruthy();
     expect(screen.getAllByText("Strength").length).toBeGreaterThan(0);
   });
@@ -159,7 +160,7 @@ describe("working application flows", () => {
     ];
     localStorage.setItem("crux-planner-v1", JSON.stringify(s));
     render(<App />);
-    await user.click(screen.getByRole("button", { name: "Training history" }));
+    await user.click(screen.getByRole("button", { name: "Progress" }));
     await user.click(
       screen.getByRole("button", { name: /Strength.*Gym.*RPE 6/ }),
     );
@@ -176,7 +177,7 @@ describe("working application flows", () => {
   it("plans two sessions, shows loading warnings, and moves a plan", async () => {
     const user = userEvent.setup();
     render(<App />);
-    await user.click(screen.getByRole("button", { name: "Training plan" }));
+    await user.click(screen.getByRole("button", { name: "Plan" }));
     await user.click(screen.getByRole("button", { name: "Plan session" }));
     let d = screen.getByRole("dialog");
     await user.selectOptions(within(d).getByLabelText("Session"), "kilter");
@@ -310,7 +311,7 @@ describe("working application flows", () => {
     await user.click(screen.getByRole("button", { name: "Save preferences" }));
     expect(stored().settings.goals.hard).toBe(3);
     expect(stored().weeks[previous].goals.hard).toBe(1);
-    await user.click(screen.getByRole("button", { name: "Training history" }));
+    await user.click(screen.getByRole("button", { name: "Progress" }));
     await user.selectOptions(screen.getByLabelText("Review week"), previous);
     expect(screen.getByText("A week in the books")).toBeTruthy();
     expect(
@@ -338,6 +339,7 @@ describe("adding workout types and activities from the calendar shelf", () => {
     state.weeks[previous] = { start: previous, startDay: 1, goals: { ...state.settings.goals, volume: 2 }, notes: "Archived week" };
     localStorage.setItem(PROFILE_KEY, JSON.stringify(firstProfile(state)));
     let view = render(<App />);
+    await user.click(screen.getByRole("button", { name: "Plan" }));
     await user.click(screen.getByRole('button', { name: 'Add workout type' }));
     let dialog = screen.getByRole('dialog', { name: 'Add a workout type' });
     await user.type(within(dialog).getByLabelText('New workout type'), 'Cycling');
@@ -351,6 +353,7 @@ describe("adding workout types and activities from the calendar shelf", () => {
     expect(stored().weeks[previous]).toEqual(state.weeks[previous]);
     view.unmount();
     view = render(<App />);
+    await user.click(screen.getByRole("button", { name: "Plan" }));
     await user.click(screen.getByRole('tab', { name: 'Cycling' }));
     expect(screen.getByText(/Add your first Cycling workout/)).toBeTruthy();
     await user.click(screen.getByRole('button', { name: 'Add workout to Cycling' }));
@@ -368,13 +371,14 @@ describe("adding workout types and activities from the calendar shelf", () => {
     expect(stored().plans.some(p => p.templateId === workout.id)).toBe(true);
     expect(stored().logs).toHaveLength(0);
     view.unmount(); render(<App />);
+    await user.click(screen.getByRole("button", { name: "Plan" }));
     await user.click(screen.getByRole('tab', { name: 'Cycling' }));
     expect(screen.getByRole('button', { name: 'Drag Hill ride into calendar' })).toBeTruthy();
     expect(stored().plans.some(p => p.templateId === workout.id)).toBe(true);
   });
   it("adds a climbing activity to an existing type from the weekly planner", async () => {
     const user = userEvent.setup(); render(<App />);
-    await user.click(screen.getByRole('button', { name: 'Training plan' }));
+    await user.click(screen.getByRole('button', { name: 'Plan' }));
     await user.click(screen.getByRole('button', { name: 'Add workout to Hard' }));
     const dialog = screen.getByRole('dialog');
     expect((within(dialog).getByLabelText('Workout type') as HTMLSelectElement).value).toBe('hard');
@@ -391,6 +395,7 @@ describe("adding workout types and activities from the calendar shelf", () => {
   });
   it("rejects duplicate type names without changing the planner", async () => {
     const user = userEvent.setup(); render(<App />);
+    await user.click(screen.getByRole("button", { name: "Plan" }));
     const before = stored();
     await user.click(screen.getByRole('button', { name: 'Add workout type' }));
     await user.type(screen.getByLabelText('New workout type'), ' VOLUME ');
@@ -439,7 +444,7 @@ describe("profile and custom workout UI", () => {
     await user.click(
       within(dialog).getByRole("button", { name: "Save session" }),
     );
-    await user.click(screen.getByRole("button", { name: "Dashboard" }));
+    await user.click(screen.getByRole("button", { name: "Go to Today" }));
     expect(
       screen.queryByRole("button", { name: "Pain / discomfort" }),
     ).toBeNull();
@@ -461,6 +466,7 @@ describe("profile and custom workout UI", () => {
       "original-climbing",
     );
     expect(stored().logs).toHaveLength(0);
+    await user.click(screen.getByRole("button", { name: "Plan" }));
     expect(
       screen.getByRole("button", { name: "Drag Kilter projecting into calendar" }),
     ).toBeTruthy();
@@ -565,6 +571,7 @@ describe("actual exercises in calendar categories", () => {
     ];
     localStorage.setItem("crux-planner-v1", JSON.stringify(state));
     const view = render(<App />);
+    await user.click(screen.getByRole("button", { name: "Plan" }));
     await user.click(
       screen.getByRole("button", { name: `Edit Bench press on ${dayKey()}` }),
     );
@@ -589,6 +596,7 @@ describe("actual exercises in calendar categories", () => {
     expect(stored().logs).toEqual(state.logs);
     view.unmount();
     render(<App />);
+    await user.click(screen.getByRole("button", { name: "Plan" }));
     await user.click(
       screen.getByRole("button", { name: `Edit Bench press on ${dayKey()}` }),
     );
@@ -692,6 +700,7 @@ describe("actual exercises in calendar categories", () => {
   it("shows named activities inside their category and actual strength/stretching exercises", async () => {
     const user = userEvent.setup();
     render(<App />);
+    await user.click(screen.getByRole("button", { name: "Plan" }));
     expect(
       screen.getByRole("tab", { name: "Hard" }).getAttribute("aria-selected"),
     ).toBe("true");
@@ -721,7 +730,7 @@ describe("actual exercises in calendar categories", () => {
   it("composes two exercises as one session, then logs only those exercises", async () => {
     const user = userEvent.setup();
     const view = render(<App />);
-    await user.click(screen.getByRole("button", { name: "Training plan" }));
+    await user.click(screen.getByRole("button", { name: "Plan" }));
     await user.click(screen.getByRole("tab", { name: "Strength" }));
     await user.click(
       screen.getByRole("button", {
@@ -795,6 +804,7 @@ describe("actual exercises in calendar categories", () => {
   it("logs isolated stretching as recovery instead of completing the strength goal", async () => {
     const user = userEvent.setup();
     render(<App />);
+    await user.click(screen.getByRole("button", { name: "Plan" }));
     await user.click(screen.getByRole("tab", { name: "Strength" }));
     await user.click(
       screen.getByRole("button", {
@@ -821,6 +831,7 @@ describe("actual exercises in calendar categories", () => {
   it("records selected hangs and their rest interval as finger loading", async () => {
     const user = userEvent.setup();
     render(<App />);
+    await user.click(screen.getByRole("button", { name: "Plan" }));
     await user.click(screen.getByRole("tab", { name: "Strength" }));
     await user.click(
       screen.getByRole("button", {
@@ -835,6 +846,7 @@ describe("actual exercises in calendar categories", () => {
     expect(stored().logs[0].fingerLoad).toBe(true);
     expect(stored().logs[0].exercises).toHaveLength(1);
     expect(stored().logs[0].exercises[0].rest).toBe("180 s");
+    await user.click(screen.getByRole("button", { name: "Go to Today" }));
     await user.click(
       screen.getByRole("button", { name: "Get my recommendation" }),
     );
@@ -845,6 +857,7 @@ describe("actual exercises in calendar categories", () => {
   it("removes an individual exercise without dropping the rest of its session", async () => {
     const user = userEvent.setup();
     render(<App />);
+    await user.click(screen.getByRole("button", { name: "Plan" }));
     await user.click(screen.getByRole("tab", { name: "Strength" }));
     for (const name of ["Bench press", "Single-arm lat pulldown"]) {
       await user.click(

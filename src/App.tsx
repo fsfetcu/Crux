@@ -1,3 +1,4 @@
+import { useDndMonitor } from "@dnd-kit/core";
 import { ProfileProvider, useProfiles, useTypeLabels } from "./ProfileContext";
 import { AccountProvider, useAccount } from "./accounts/AccountContext";
 import { AccountControl, syncLabels } from "./accounts/AccountControl";
@@ -6,6 +7,10 @@ import { WorkoutTypesEditor } from "./WorkoutTypesEditor";
 import { CalendarConnect } from "./CalendarConnect";
 import { CataloguePage } from "./CataloguePage";
 import { catalogueFromTemplate, templateInPlan } from "./catalogue";
+import { WorkoutRunner } from "./WorkoutRunner";
+import { completedExercises,createWorkoutDraft,parseWorkoutDraft,workoutDraftKey } from "./workoutDraft";
+import type { WorkoutDraft } from "./workoutDraft";
+import { checkForAppUpdate,refreshApp,useAppUpdates } from "./appUpdates";
 import { GradeCountFields, GradeStatistics, WeightInput } from "./TrainingFields";
 import { normalizeGradeCounts, gradeTotals, gradeSystemLabels } from "./grades";
 import { Modal } from "./Modal";
@@ -17,6 +22,9 @@ import {
   ArrowRight,
   ArrowUpRight,
   CalendarDays,
+  Play,
+  RefreshCw,
+  UserRound,
   Check,
   ChevronLeft,
   ChevronRight,
@@ -98,6 +106,7 @@ import {
   PlannerDragContext,
   SessionShelf,
   CalendarDropDay,
+  CalendarDayTab,
   DraggablePlannedSession,
 } from "./PlannerDnD";
 import { download } from "./storage";
@@ -169,7 +178,8 @@ function CheckInPanel({
 }) {
   const [value, setValue] = useState<CheckIn>(saved ?? defaultCheckIn);
   const [optional, setOptional] = useState(false);
-  useEffect(() => setValue(saved ?? defaultCheckIn), [saved]);
+  const [expanded,setExpanded]=useState(!saved);
+  useEffect(() => {setValue(saved ?? defaultCheckIn);setExpanded(!saved);}, [saved]);
   const choices = (
     label: string,
     key: keyof CheckIn,
@@ -191,6 +201,7 @@ function CheckInPanel({
       </div>
     </fieldset>
   );
+  if(saved&&!expanded)return <div className="checkin checkin-collapsed"><div><span className="eyebrow">CHECKED IN TODAY</span><h2>{saved.recovery==="recovered"?"Feeling recovered":saved.recovery==="somewhat"?"Some fatigue today":"Taking recovery seriously"}</h2><p className={saved.fingers==="pain"?"checkin-pain":"muted"}>{fingerRelevant?`Fingers: ${saved.fingers==="fresh"?"fresh":saved.fingers==="tired"?"tired":"pain / discomfort"} · `:""}Energy: {saved.energy}</p></div><button className="text-button" onClick={()=>setExpanded(true)}><Pencil size={15}/>Edit check-in</button></div>;
   return (
     <div className="checkin">
       <div className="eyebrow">
@@ -308,6 +319,8 @@ interface LogOptions {
   omitHangs?: boolean;
   edit?: Workout;
   exercises?: Exercise[];
+  draftId?: string;
+  duration?: number;
 }
 function LogForm({
   state,
@@ -417,7 +430,7 @@ function LogForm({
     const exercises = sessionExercises;
     onSave(
       {
-        id: edit?.id ?? uid(),
+        id: edit?.id ?? options.draftId ?? uid(),
         templateId,
         exerciseOnly,
         category: exerciseOnly
@@ -522,7 +535,7 @@ function LogForm({
               type="number"
               min="1"
               max="1440"
-              defaultValue={edit?.duration ?? ""}
+              defaultValue={edit?.duration ?? options.duration ?? ""}
               placeholder="e.g. 90"
             />
           </label>
@@ -980,6 +993,9 @@ function Calendar({
   onConnect: () => void;
   compact?: boolean;
 }) {
+  const [selectedDay,setSelectedDay]=useState(inWeek(dayKey(),start)?dayKey():start);
+  useEffect(()=>setSelectedDay(inWeek(dayKey(),start)?dayKey():start),[start]);
+  useDndMonitor({onDragEnd:({over})=>{const date=over?.data.current?.date;if(typeof date==="string")setSelectedDay(date);}});
   return (
     <section
       className={`panel calendar-panel ${compact ? "compact-calendar" : ""}`}
@@ -1000,7 +1016,7 @@ function Calendar({
           <button className="text-button swap-button" onClick={onSwap}>
             <ArrowLeftRight size={15} /> Swap days
           </button>
-          <button className="text-button" onClick={onToday}>
+          <button className="text-button" onClick={()=>{setSelectedDay(dayKey());onToday();}}>
             Today
           </button>
           <div className="arrow-group">
@@ -1027,6 +1043,7 @@ function Calendar({
         </button>
         <span className="muted small">Take your plans with you</span>
       </div>
+      <div className="phone-week-strip" aria-label="Choose a calendar day">{Array.from({length:7},(_,i)=>{const date=addDays(start,i);return <CalendarDayTab key={date} date={date} selected={selectedDay===date} count={state.plans.filter((p)=>p.date===date).length+state.logs.filter((l)=>logDay(l)===date).length} onSelect={()=>setSelectedDay(date)}/>;})}</div>
       <div className="calendar-grid">
         {Array.from({ length: 7 }, (_, i) => {
           const date = addDays(start, i),
@@ -1034,7 +1051,7 @@ function Calendar({
           const plans = state.plans.filter((p) => p.date === date),
             logs = state.logs.filter((l) => logDay(l) === date);
           return (
-            <CalendarDropDay key={date} date={date} today={today}>
+            <CalendarDropDay key={date} date={date} today={today} selected={date===selectedDay}>
               <div className="day-heading">
                 <span>{fmtDate(date, { weekday: "short" })}</span>
                 <strong>{fromDay(date).getDate()}</strong>
@@ -1506,6 +1523,12 @@ function TrainingApp() {
   const [shelfCategory, setShelfCategory] = useState<Category | null>(null);
   const recoveryLogs = profiles.data.profiles.flatMap((p) => p.state.logs);
   const { online, offlineReady } = useAppStatus();
+  const appUpdate=useAppUpdates();
+  const draftKey=workoutDraftKey(account.user?.id??null,profiles.active.id);
+  const [workoutDraft,setWorkoutDraft]=useState<WorkoutDraft|null>(()=>{try{const raw=localStorage.getItem(draftKey);if(!raw)return null;const d=parseWorkoutDraft(raw,profiles.active.id);return state.logs.some((l)=>l.id===d.id)?null:d;}catch{return null;}});
+  const [runningWorkout,setRunningWorkout]=useState(false);
+  const [profileMenu,setProfileMenu]=useState(false);
+  const [undo,setUndo]=useState<{plans:PlannedSession[];after:PlannedSession[]}|null>(null);
   const navToggleRef = useRef<HTMLButtonElement>(null);
   const navCloseRef = useRef<HTMLButtonElement>(null);
   const [page, setPage] = useState("dashboard");
@@ -1629,6 +1652,12 @@ function TrainingApp() {
     setMenu(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
+  const updateDraft=(d:WorkoutDraft)=>{try{localStorage.setItem(draftKey,JSON.stringify(d));setWorkoutDraft(d);return true;}catch{notify("Could not save this workout draft. Keep the app open and export your training backup.");return false;}};
+  const startWorkout=(templateId:string,exercises?:Exercise[],planId?:string)=>{
+    if(workoutDraft){setRunningWorkout(true);return;}
+    const template=state.templates.find((t)=>t.id===templateId);if(!template)return;
+    if(updateDraft(createWorkoutDraft(profiles.active.id,template,exercises,planId,state)))setRunningWorkout(true);
+  };
   const onSaveLog = (l: Workout, planId?: string) => {
     let next: State = {
       ...state,
@@ -1637,6 +1666,7 @@ function TrainingApp() {
     };
     next = ensureWeek(next, logDay(l));
     if (commit(next)) {
+      if(logOptions?.draftId&&logOptions.draftId===workoutDraft?.id){try{localStorage.removeItem(draftKey);}catch{/* The stable log ID prevents duplicate completion if a stale draft survives. */}setWorkoutDraft(null);}
       setLogOptions(null);
       notify("Workout saved. Your session pool and recovery are up to date.");
     }
@@ -1681,10 +1711,12 @@ function TrainingApp() {
       target?.id,
       target?.exercises,
     );
-    if (commit(next))
+    if (commit(next)) {
+      setUndo({plans:state.plans,after:next.plans});
       notify(
         `${name} ${drag.kind === "plan" || drag.kind === "planned-exercise" ? "moved" : "planned"} for ${fmtDate(date)}.${warnings.length ? " " + warnings.join(" ") : ""}`,
       );
+    }
   };
   const calendarProps = {
     state,
@@ -1787,10 +1819,10 @@ function TrainingApp() {
           </div>
           <nav aria-label="Main navigation">
             {[
-              ["dashboard", "Dashboard", Mountain],
-              ["planner", "Training plan", CalendarDays],
+              ["dashboard", "Today", Mountain],
+              ["planner", "Plan", CalendarDays],
               ["catalogue", "Catalogue", BookOpen],
-              ["history", "Training history", History],
+              ["history", "Progress", History],
               ["settings", "Settings", SlidersHorizontal],
             ].map(([id, label, I]) => {
               const NavIcon = I as typeof Mountain;
@@ -1829,19 +1861,6 @@ function TrainingApp() {
                 })}
               </span>
             </div>
-            <div className="local-note">
-              <span className="status-dot" />
-              <span>
-                {!storageReady
-                  ? "Storage needs attention"
-                  : !online
-                    ? "Offline · saved on this device"
-                    : account.user
-                      ? syncLabels[profiles.syncStatus]
-                      : "Saved on this device"}
-              </span>
-              <ShieldCheck size={14} />
-            </div>
           </div>
         </aside>
         {menu && <div className="nav-overlay" onClick={() => setMenu(false)} />}
@@ -1861,13 +1880,13 @@ function TrainingApp() {
               Your training <ChevronRight size={12} />{" "}
               <strong>
                 {page === "dashboard"
-                  ? "Dashboard"
+                  ? "Today"
                   : page === "planner"
-                    ? "Training plan"
+                    ? "Plan"
                     : page === "catalogue"
                       ? "Catalogue"
                     : page === "history"
-                      ? "Training history"
+                      ? "Progress"
                       : "Settings"}
               </strong>
             </span>
@@ -1895,9 +1914,13 @@ function TrainingApp() {
                 <ChevronRight size={13} />
               </button>
               <AccountControl />
+              <button className="icon-button profile-menu-toggle" aria-label="Profile and settings" aria-expanded={profileMenu} onClick={()=>setProfileMenu(true)}><UserRound size={19}/></button>
             </div>
           </header>
           <div className="main-content">
+            <div className="app-status-row"><span className={`save-indicator ${!online?"offline":profiles.syncStatus}`} role="status"><span className="status-dot"/>{!storageReady?"Saving needs attention":!online?"Offline · saved on this phone":account.user?syncLabels[profiles.syncStatus]:"Saved on this phone"}</span>{appUpdate.ready?<button className="update-pill" onClick={()=>{if(document.querySelector('[role="dialog"]')||logOptions||plan||newWorkout||runningWorkout){notify("Finish or close the open editor before refreshing. Your workout draft stays saved.");return;}refreshApp();}}><RefreshCw size={14}/>Update available · Refresh</button>:<button className="update-check" disabled={appUpdate.checking} onClick={()=>void checkForAppUpdate()}><RefreshCw size={13} className={appUpdate.checking?"spinning":""}/>{appUpdate.checking?"Checking…":"Check for updates"}</button>}</div>
+            {appUpdate.message&&<p className="update-message small" role="status">{appUpdate.message}</p>}
+            {workoutDraft&&<div className="resume-workout"><div><strong>{workoutDraft.template.name}</strong><span>Workout in progress · saved on this phone</span></div><button className="button" onClick={()=>setRunningWorkout(true)}><Play size={16}/>Resume workout</button></div>}
             {account.user && (profiles.syncMessage || profiles.conflict) && (
               <section className="cloud-notice" role="status">
                 <strong>
@@ -1961,21 +1984,19 @@ function TrainingApp() {
             )}
             {page === "dashboard" && (
               <>
-                <div className="page-heading">
+                <div className="page-heading today-heading">
                   <div>
-                    <div className="eyebrow">
-                      A LITTLE STRUCTURE. PLENTY OF FREEDOM.
-                    </div>
+                    <div className="eyebrow">YOUR TRAINING, TODAY</div>
                     <h1>
-                      Find your next move<span className="accent">.</span>
+                      Today<span className="accent">.</span>
                     </h1>
-                    <p>Train with intention. Let recovery lead the way.</p>
+                    <p>Check in. Choose your session. Find your rhythm.</p>
                   </div>
                   <button className="button" onClick={() => setLogOptions({})}>
                     <Plus size={17} /> Log session
                   </button>
                 </div>
-                <section className="today-grid">
+                <section className={`today-grid ${checkin?"checked-in":""}`}>
                   <CheckInPanel
                     key={today}
                     fingerRelevant={state.templates.some((t) =>
@@ -2029,6 +2050,7 @@ function TrainingApp() {
                           </p>
                         ))}
                       </div>
+                      {checkin&&rec.primary.intensity!=="rest"&&<div className="rec-start"><button className="button cream" onClick={()=>startWorkout(rec.primary.templateId,rec.primary.omitHangs?state.templates.find((t)=>t.id===rec.primary.templateId)?.exercises.filter((e)=>!e.fingerLoad):undefined)}><Play size={17}/>Start workout</button></div>}
                       <div className="rec-bottom">
                         <button
                           className="button cream"
@@ -2078,14 +2100,7 @@ function TrainingApp() {
                   </button>
                 </div>
                 <Progress state={state} start={currentStart} />
-                <SessionShelf
-                  {...shelfActions}
-                  templates={state.templates}
-                  onChoose={(templateId, exercises) =>
-                    setPlan({ templateId, date: today, exercises })
-                  }
-                />
-                <Calendar {...calendarProps} compact />
+                <section className="panel today-sessions"><div className="section-header"><div><h2>On your plan today</h2><p className="small muted">A little structure. Always room to adjust.</p></div><button className="text-button" onClick={()=>navigate("planner")}>Open plan<ArrowRight size={16}/></button></div><div className="today-session-list">{state.plans.filter((p)=>p.date===today).map((p)=>{const base=state.templates.find((t)=>t.id===p.templateId);if(!base)return null;const t=selectedTemplate(base,p.exercises);return <article className={`today-session-card ${sessionTone(t)}`} key={p.id}><Icon category={t.category} size={22}/><div><h3>{t.name}</h3><p>{t.exercises.length?`${t.exercises.length} exercises · `:""}{t.location||categoryLabels[t.category]}</p></div><div className="today-session-actions"><button className="button" aria-label={`Start ${t.name}`} onClick={()=>startWorkout(base.id,p.exercises,p.id)}><Play size={15}/>Start</button><button className="icon-button" aria-label={`Edit ${t.name} on ${today}`} onClick={()=>setPlan(p)}><Pencil size={16}/></button><button className="text-button" aria-label={`Complete ${t.name}`} onClick={()=>setLogOptions({templateId:base.id,planId:p.id,exercises:p.exercises})}>Log</button></div></article>;})}{!state.plans.some((p)=>p.date===today)&&<div className="today-empty"><Leaf size={24}/><div><strong>Today has room.</strong><p>Start with your recommendation, or choose a workout in your plan.</p></div><button className="button secondary" onClick={()=>setPlan({date:today})}>Plan session</button></div>}</div></section>
                 <div className="dashboard-bottom">
                   <section className="panel">
                     <div className="section-header">
@@ -2165,7 +2180,7 @@ function TrainingApp() {
             )}
             {page === "catalogue" && <CataloguePage onViewPlan={() => navigate("planner")} renderEditor={(template,save) => <LibraryCard template={template} onSave={save} isNew catalogueMode/>}/>}
             {page === "planner" && (
-              <>
+              <div className="plan-page">
                 <div className="page-heading">
                   <div>
                     <div className="eyebrow">
@@ -2211,6 +2226,7 @@ function TrainingApp() {
                 <SessionShelf
                   {...shelfActions}
                   templates={state.templates}
+                  onStart={startWorkout}
                   onChoose={(templateId, exercises) =>
                     setPlan({
                       templateId,
@@ -2262,7 +2278,7 @@ function TrainingApp() {
                     daily check-in helps you decide what feels appropriate.
                   </p>
                 </section>
-              </>
+              </div>
             )}
             {page === "history" && (
               <>
@@ -2791,6 +2807,9 @@ function TrainingApp() {
           </div>
         </main>
 
+        <nav className="bottom-navigation" aria-label="Phone navigation">{[["dashboard","Today",Mountain],["planner","Plan",CalendarDays],["catalogue","Catalogue",BookOpen],["history","Progress",History]].map(([id,label,I])=>{const NavIcon=I as typeof Mountain;return <button key={String(id)} aria-label={`Go to ${String(label)}`} aria-current={page===id?"page":undefined} className={page===id?"active":""} onClick={()=>navigate(String(id))}><NavIcon size={21}/><span>{String(label)}</span></button>;})}</nav>
+        {profileMenu&&<Modal title="Your training" onClose={()=>setProfileMenu(false)}><div className="profile-menu-actions"><button className="button secondary" onClick={()=>{setProfileMenu(false);profiles.setShowProfiles(true);}}>Training profiles</button><button className="button secondary" onClick={()=>{setProfileMenu(false);account.setShowAccount(true);}}>Account & sync</button><button className="button secondary" onClick={()=>{setProfileMenu(false);navigate("settings");}}>Settings</button></div></Modal>}
+        {runningWorkout&&workoutDraft&&<WorkoutRunner draft={workoutDraft} onChange={updateDraft} onClose={()=>setRunningWorkout(false)} onDiscard={()=>{try{localStorage.removeItem(draftKey);setWorkoutDraft(null);setRunningWorkout(false);notify("Unfinished draft discarded. Your plan and history are unchanged.");}catch{notify("Could not discard the draft. Try again.");}}} onFinish={()=>{const d=workoutDraft;setRunningWorkout(false);setLogOptions({templateId:d.template.id,planId:d.planId,exercises:d.exercises.length?completedExercises(d):undefined,draftId:d.id,duration:Math.max(1,Math.min(1440,Math.round((Date.now()-Date.parse(d.started))/60000)))});}}/>}
         {logOptions && (
           <LogForm
             key={
@@ -2799,7 +2818,7 @@ function TrainingApp() {
               logOptions.templateId ??
               "quick-log"
             }
-            state={state}
+            state={logOptions.draftId&&workoutDraft&&!state.templates.some((t)=>t.id===workoutDraft.template.id)?{...state,templates:[...state.templates,workoutDraft.template]}:state}
             options={logOptions}
             onSave={onSaveLog}
             onClose={() => setLogOptions(null)}
@@ -2975,6 +2994,7 @@ function TrainingApp() {
           <div role="status" className="toast">
             <CheckCircle2 size={18} />
             <span>{toast}</span>
+            {undo&&JSON.stringify(state.plans)===JSON.stringify(undo.after)&&<button className="toast-undo" onClick={()=>{if(commit({...state,plans:undo.plans})){setUndo(null);notify("Calendar change undone.");}}}>Undo</button>}
             <button
               aria-label="Dismiss notification"
               onClick={() => setToast("")}

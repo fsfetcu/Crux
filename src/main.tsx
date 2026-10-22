@@ -4,19 +4,11 @@ import App from "./App";
 import "./styles.css";
 import "./drag-planner.css";
 import "./accounts/accounts.css";
+import "./app-feel.css";
+import { startAppUpdates } from "./appUpdates";
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <App />
   </React.StrictMode>,
 );
-if ("serviceWorker" in navigator && import.meta.env.PROD) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker
-      .register(`${import.meta.env.BASE_URL}sw.js`, {
-        scope: import.meta.env.BASE_URL,
-      })
-      .catch(() => {
-        /* App stays functional if offline caching is unavailable. */
-      });
-  });
-}
+startAppUpdates();

@@ -34,6 +34,7 @@ import {
   X,
   BookOpen,
   Search,
+  Play,
 } from "lucide-react";
 import {
   fromDay,
@@ -88,7 +89,7 @@ const calendarKeyboard: KeyboardCoordinateGetter = (event, { context }) => {
   event.preventDefault();
   const days = context.droppableContainers
     .getEnabled()
-    .filter((c) => c.data.current?.date)
+    .filter((c) => c.data.current?.date && (context.droppableRects.get(c.id)?.width ?? 0)>0)
     .sort((a, b) =>
       String(a.data.current?.date).localeCompare(String(b.data.current?.date)),
     );
@@ -315,6 +316,7 @@ export function SessionShelf({
   onAddWorkout,
   onChoose,
   onBrowseCatalogue,
+  onStart,
 }: {
   templates: SessionTemplate[];
   types: WorkoutType[];
@@ -324,6 +326,7 @@ export function SessionShelf({
   onAddWorkout: (category: Category) => void;
   onChoose: (id: string, exercises?: Exercise[]) => void;
   onBrowseCatalogue?: () => void;
+  onStart?: (id:string,exercises?:Exercise[])=>void;
 }) {
   const categoryLabels = useTypeLabels();
   const { active } = useDndContext();
@@ -402,11 +405,10 @@ export function SessionShelf({
             {shown
               .filter((t) => !t.exercises.length)
               .map((t) => (
-                <LibraryBubble
-                  key={t.id}
+                <div className="shelf-workout-choice" key={t.id}><LibraryBubble
                   template={t}
                   onChoose={() => onChoose(t.id)}
-                />
+                />{onStart&&<button className="text-button" aria-label={`Start ${t.name}`} onClick={()=>onStart(t.id)}><Play size={14}/>Start workout</button>}</div>
               ))}
           </div>
         )}
@@ -418,9 +420,9 @@ export function SessionShelf({
                 <span>
                   {t.name} <small>{t.exercises.length} exercises</small>
                 </span>
-                <button className="text-button" onClick={() => onChoose(t.id)}>
+                <div className="routine-heading-actions">{onStart&&<button className="text-button" aria-label={`Start ${t.name}`} onClick={()=>onStart(t.id)}><Play size={14}/>Start workout</button>}<button className="text-button" onClick={() => onChoose(t.id)}>
                   Plan full routine
-                </button>
+                </button></div>
               </div>
               <div className="whole-routine-bubble"><LibraryBubble template={t} onChoose={()=>onChoose(t.id)}/></div>
               <div className="workout-shelf">
@@ -455,10 +457,12 @@ export function SessionShelf({
 export function CalendarDropDay({
   date,
   today,
+  selected=false,
   children,
 }: {
   date: string;
   today: boolean;
+  selected?:boolean;
   children: ReactNode;
 }) {
   const { isOver, setNodeRef } = useDroppable({
@@ -470,7 +474,7 @@ export function CalendarDropDay({
     <div
       ref={setNodeRef}
       data-calendar-date={date}
-      className={`calendar-day ${today ? "today" : ""} ${active ? "accepts-workout" : ""} ${isOver ? "drop-target" : ""}`}
+      className={`calendar-day ${today ? "today" : ""} ${selected?"selected-day":""} ${active ? "accepts-workout" : ""} ${isOver ? "drop-target" : ""}`}
       aria-label={`${labelDate(date)}${isOver ? ", release to add session" : ""}`}
     >
       {children}
@@ -481,6 +485,12 @@ export function CalendarDropDay({
       )}
     </div>
   );
+}
+export function CalendarDayTab({date,selected,count,onSelect}:{date:string;selected:boolean;count:number;onSelect:()=>void}) {
+  const {isOver,setNodeRef}=useDroppable({id:`date-tab:${date}`,data:{date}});
+  const {active}=useDndContext();
+  const d=fromDay(date);
+  return <button ref={setNodeRef} type="button" className={`phone-date-tab ${selected?"selected":""} ${isOver?"drop-target":""} ${date===new Date().toLocaleDateString("en-CA")?"today":""}`} aria-label={`Show ${labelDate(date)}`} aria-pressed={selected} onClick={onSelect} data-date-tab={date}><span>{d.toLocaleDateString("en-GB",{weekday:"short"})}</span><strong>{d.getDate()}</strong><small>{active&&isOver?"Drop":count?`${count} ${count===1?"item":"items"}`:"·"}</small></button>;
 }
 function PlusMark() {
   return <span className="drop-plus">+</span>;
