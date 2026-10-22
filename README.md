@@ -114,7 +114,7 @@ The app intentionally starts with **no invented training history or check-ins**.
 
 ## Verification
 
-142 automated tests pass, covering recommendations, profiles, logging, day-specific exercise edits, backups, planning, offline behavior, account switching, sync conflicts, Google sign-in and private membership enforcement. The worker tests run at both `/` and `/crux-planner/`, including scoped asset caching, failed updates, sign-in-page rejection and retaining another project's cache. TypeScript and the production build pass.
+143 automated tests cover recommendations, profiles, logging, day-specific exercise edits, backups, planning, offline behavior, account switching, sync conflicts, Google sign-in and private membership enforcement. The worker tests run at both `/` and `/crux-planner/`, including scoped asset caching, failed updates, sign-in-page rejection and retaining another project's cache. TypeScript and the production build pass.
 
 The GitHub-ready production build was checked in a real browser at `/crux-planner/`. The icon loaded from that path, the manifest referenced that path, and the interface fit a 390-pixel phone viewport without horizontal overflow. Saved a daily check-in and a bench-press plan with 4 × 8 and 2 min rest, closed the tab, stopped the preview server (HTTP 000), and reopened the cached app. Both the check-in and the exact exercise values remained available offline.
 

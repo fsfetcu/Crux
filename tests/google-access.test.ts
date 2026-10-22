@@ -12,7 +12,7 @@ beforeAll(async () => {
   await db.exec(`create schema auth;
     create role anon; create role authenticated; create role supabase_auth_admin;
     create table auth.users(id uuid primary key, email text, email_confirmed_at timestamptz, raw_user_meta_data jsonb);
-    create table auth.identities(user_id uuid, provider text, identity_data jsonb);
+    create table auth.identities(id uuid, user_id uuid, provider text, provider_id text, identity_data jsonb);
     create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
     grant usage on schema auth,public to anon,authenticated;
     grant execute on function auth.uid() to anon,authenticated;`);
@@ -37,6 +37,11 @@ const asUser = (id: string) => db.exec(`reset role; set request.jwt.claim.sub='$
 const save = (id=A,revision=0) => db.query("select * from public.save_planner($1::uuid,$2::bigint,$3::jsonb)",[id,revision,document]);
 const load = (id=A) => db.query("select * from public.load_planner($1::uuid)",[id]);
 describe("private Google account access",() => {
+  it("runs the complete deployment verification without retaining test records",async () => {
+    const results = await db.exec(readFileSync(new URL('../supabase/verify-google-accounts.sql',import.meta.url),'utf8'));
+    expect(results.at(-1)?.rows[0]).toMatchObject({verification:expect.stringContaining('PASS: approved Google access')});
+    expect((await db.query("select * from auth.users where email like 'crux-test-%@example.invalid'")).rows).toEqual([]);
+  });
   it("allows an approved verified Google identity and preserves cross-account isolation",async () => {
     await asUser(A); await save();
     expect((await load()).rows).toHaveLength(1);
