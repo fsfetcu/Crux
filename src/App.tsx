@@ -2726,6 +2726,10 @@ function TrainingApp() {
                 game.
               </span>
               <span>Made for a flexible kind of progress.</span>
+              <nav className="footer-legal" aria-label="Privacy and terms">
+                <a href={`${import.meta.env.BASE_URL}privacy.html`}>Privacy</a>
+                <a href={`${import.meta.env.BASE_URL}terms.html`}>Terms</a>
+              </nav>
             </footer>
           </div>
         </main>

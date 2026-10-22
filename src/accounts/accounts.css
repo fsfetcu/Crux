@@ -38,6 +38,9 @@
 .google-signin:hover { background: #f5f7f5; }
 .google-signin:disabled { opacity: .65; cursor: wait; }
 .existing-password { margin-top: 20px; }
+.footer { flex-wrap: wrap; }
+.footer-legal { display: flex; gap: 18px; }
+.footer-legal a { display: inline-flex; align-items: center; min-height: 32px; color: #61705c; font-size: 11px; text-underline-offset: 3px; }
 .account-sync {
   display: flex;
   align-items: center;

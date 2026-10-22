@@ -20,12 +20,14 @@ The Google feature is activated only when `VITE_GOOGLE_AUTH_ENABLED=true`. Keep 
    ```
 
 5. In **Authentication → Auth Hooks → Before User Created**, select the Postgres function `public.crux_before_user_created`. It rejects unapproved addresses and new non-Google signups. Database policies separately enforce membership on every read and write, including existing sessions. A matching, verified Google identity is required; editable user metadata cannot grant access. To revoke online access, set a person's `allowed` field to `false`. This retains their planner and cannot erase previously downloaded or offline copies.
-6. Add the same people to Google's test-user list when required by the project's audience configuration. A Google testing audience is an additional control, not a replacement for the Supabase checks. See [Google's setup guide](https://supabase.com/docs/guides/auth/social-login/auth-google) for current audience behavior.
+6. Keep Google's audience in Testing for the small-group setup. Google exempts basic identity-only sign-in (`openid`, `email`, `profile`) from its test-user-list requirement and seven-day authorization expiry. The Supabase checks enforce the actual friends-only access list. See [Google's audience rules](https://support.google.com/cloud/answer/15549945) for the scope exception. Additional Google data scopes are not configured.
 7. Add the GitHub Actions repository variable `VITE_GOOGLE_AUTH_ENABLED=true`, then deploy `main`. Test the redirect, first sign-in, account save, sign-out and sign-in again. Each person must consent to Google sign-in for themselves. Existing device-only data is imported only through the explicit backup preview and Restore flow.
 
 The website and source remain public on GitHub Pages. Private online account access is restricted on the backend. Device-only mode remains usable without signing in. A denied or revoked account keeps its cached records, but online access is refused and Crux asks the user to use an approved account.
 
 Google sign-in is prepared in source; owner agreement, OAuth credentials and live backend activation must be completed before it is considered operational.
+
+The Crux mountain logo, homepage and public privacy/terms links are saved in Google branding. The matching app pages are `privacy.html` and `terms.html`, linked from the app footer. Branding remains in Testing; a Google verification badge or production branding approval is not claimed.
 
 ## Activate a Supabase project
 
