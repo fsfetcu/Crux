@@ -8,7 +8,7 @@ A complete mobile-first React + TypeScript app for flexible, recovery-based trai
 
 ## Accounts and online saving
 
-The account feature includes private account workspaces, offline saving and revision-based conflict review. Google sign-in and a private friends-only email access list are available after provider configuration; they avoid the need for a custom email delivery service. The existing email/password setup is also supported. See [account setup and validation](docs/ACCOUNTS.md) for Google setup, migrations and GitHub build variables. Device-only plans are copied into an account only when you choose to restore them.
+The account feature includes private account workspaces, offline saving and revision-based conflict review. Google sign-in supports self-service accounts without manual email approval after the open-signup migration; it avoids the need for a custom email delivery service. Each verified Google account receives its own private planner. The existing email/password setup is also supported. See [account setup and validation](docs/ACCOUNTS.md) for Google setup, migrations and GitHub build variables. Device-only plans are copied into an account only when you choose to restore them.
 
 ## Run locally
 
@@ -142,7 +142,7 @@ The app intentionally starts with **no invented training history or check-ins**.
 
 ## Verification
 
-235 automated tests cover recommendations, profiles, logging, day-specific exercise edits, backups, planning, offline behavior, account switching, sync conflicts, automatic Google sign-in, private membership enforcement and timers. Shelf creation checks cover custom types, empty tabs, tagged activities, calendar planning, reopening, duplicate names and preserving weekly overrides. Sign-in checks include session restoration, cancellation, browser Back, logout, failed redirects and reconnecting from offline. The worker tests run at both `/` and `/crux-planner/`, including scoped asset caching, failed updates, sign-in-page rejection and retaining another project's cache. TypeScript and the production build pass.
+243 automated tests cover recommendations, profiles, logging, day-specific exercise edits, backups, planning, offline behavior, account switching, sync conflicts, automatic Google sign-in, verified Google identities, self-service signup, account isolation and timers. Shelf creation checks cover custom types, empty tabs, tagged activities, calendar planning, reopening, duplicate names and preserving weekly overrides. Sign-in checks include session restoration, cancellation, browser Back, logout, failed redirects and reconnecting from offline. The worker tests run at both `/` and `/crux-planner/`, including scoped asset caching, failed updates, sign-in-page rejection and retaining another project's cache. TypeScript and the production build pass.
 
 The GitHub-ready production build was checked in a real browser at `/crux-planner/`. The icon loaded from that path, the manifest referenced that path, and the interface fit a 390-pixel phone viewport without horizontal overflow. Saved a daily check-in and a bench-press plan with 4 × 8 and 2 min rest, closed the tab, stopped the preview server (HTTP 000), and reopened the cached app. Both the check-in and the exact exercise values remained available offline.
 

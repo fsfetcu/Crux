@@ -2,7 +2,19 @@
 
 Crux stays on GitHub Pages. Supabase handles Google authentication and a private planner document for each account. The live app requires sign-in before opening a planner. Signing in opens the account's own data, never another person's guest data. Importing an earlier device-only planner is an explicit action with the existing backup preview and Restore confirmation. Local builds without Google mode retain the device-only and email/password flows.
 
-## Google sign-in for a small group
+## Open Google sign-in (no invitation list)
+
+Apply [`202610230001_open_google_signup.sql`](../supabase/migrations/202610230001_open_google_signup.sql) after the six original migrations. It allows any verified Google account, including Gmail and Google Workspace accounts, to create its own Crux workspace. No email addresses need to be added manually. Keep the existing Before User Created hook enabled: the replacement accepts Google signup with a valid email and rejects non-Google or anonymous signup.
+
+The migration replaces only authorization functions and the calendar projection. It does not change training documents, profile IDs, revisions, saved calendar links, or per-user row-security policies. Reads and saves still require the signed-in user ID to match the planner owner. A confirmed email plus a matching verified Google identity are required; editable user metadata cannot grant access. The old private approved-email table is retained but no longer consulted. To suspend an account, use Supabase Authentication's user ban; active bans also stop planner access and calendar reads without deleting data.
+
+Set **Google Auth Platform → Audience → Publishing status** to **In production** for the public app. Keep the audience External and request only `openid`, `userinfo.email` and `userinfo.profile`. This changes who may sign in, not the Google data scopes. Google documents an identity-only exception to Testing restrictions, but Production states the intended public audience explicitly. Branding verification and Workspace administrators' own restrictions are separate from Crux's invitation policy. See [Google's audience rules](https://support.google.com/cloud/answer/15549945).
+
+Run [`verify-open-google-accounts.sql`](../supabase/verify-open-google-accounts.sql) as postgres after the migration. It verifies new-account access, account isolation, revisions, bans, hook grants and anonymous denial with fictional records in a rolled-back transaction. Automated tests also check newcomer calendar links, protected helper functions, malformed identities, and safe migration reapplication. Finish with a real Google sign-in and account-save check; another person's consent must be completed by that person.
+
+## Original friends-only setup (historical)
+
+The steps below document the original 22 October configuration. The open-signup migration above supersedes its approved-email list and Testing recommendation.
 
 Google sign-in is the preferred setup for friends who already have Google accounts. It does not need a sending domain, custom SMTP or a separate Crux password. Google handles authentication and password recovery; Supabase still stores each person's private planner. Basic identity scopes are `openid`, `email` and `profile`. Crux does not request access to Gmail messages, Drive files or contacts.
 

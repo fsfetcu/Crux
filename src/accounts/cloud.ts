@@ -19,7 +19,7 @@ export interface PlannerCloud {
 export class PlannerConflict extends Error {}
 export class PlannerAccessDenied extends Error {
   constructor() {
-    super("This Google account does not have access to Crux. Ask the owner to approve it, or sign out and use another account. Your device backup has been kept.");
+    super("This Google account does not have access to Crux. Sign in again with a verified Google account. If this continues, contact the app owner. Your device backup has been kept.");
   }
 }
 export function parseRemote(row: Record<string, unknown>): RemotePlanner {

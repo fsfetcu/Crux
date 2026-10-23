@@ -1,6 +1,6 @@
 // Never display arbitrary text or tokens from a sign-in callback URL.
 export const oauthFailureMessage =
-  "Google sign-in could not be completed. Try again with an approved account, or ask the owner to check your access.";
+  "Google sign-in could not be completed. Check your connection and try again with your Google account.";
 
 export function oauthCallbackFailed(href: string): boolean {
   try {

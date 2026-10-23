@@ -43,8 +43,8 @@ export function GoogleSignIn({ automatic = false }: { automatic?: boolean }) {
   return (
     <div className="form-stack">
       <p className="muted">
-        Your training, saved privately across devices. Use the Google account
-        approved for Crux.
+        Your training, saved privately across devices. Anyone with a Google
+        account can sign in. No invitation needed.
       </p>
       <button
         className="google-signin"
