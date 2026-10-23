@@ -12,6 +12,8 @@ Set **Google Auth Platform → Audience → Publishing status** to **In producti
 
 Run [`verify-open-google-accounts.sql`](../supabase/verify-open-google-accounts.sql) as postgres after the migration. It verifies new-account access, account isolation, revisions, bans, hook grants and anonymous denial with fictional records in a rolled-back transaction. Automated tests also check newcomer calendar links, protected helper functions, malformed identities, and safe migration reapplication. Finish with a real Google sign-in and account-save check; another person's consent must be completed by that person.
 
+On 23 October 2026, the open-signup migration was applied to the live Crux project and Google Auth Platform was changed to **External / In production**. The live account verification passed, including an account absent from the old invitation list. Calendar verification also passed with its approved-email fixture omitted. Both transactions rolled back all fictional records. The existing owner's browser continued to show **Saved online**. The release suite passed 243 tests across 27 files and the production build passed. A fresh visitor's Google consent still has to be completed by that visitor. Google confirms that data-access verification is not required for the configured basic identity scopes; custom branding is not currently shown pending its separate review.
+
 ## Original friends-only setup (historical)
 
 The steps below document the original 22 October configuration. The open-signup migration above supersedes its approved-email list and Testing recommendation.
